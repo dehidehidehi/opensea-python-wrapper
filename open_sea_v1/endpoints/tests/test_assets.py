@@ -2,7 +2,7 @@ from itertools import combinations
 from unittest import TestCase
 
 from open_sea_v1.endpoints.endpoint_assets import _AssetsEndpoint, _AssetsOrderBy
-from open_sea_v1.responses.asset_obj import _AssetResponse
+from open_sea_v1.responses.response_asset import _AssetResponse
 
 
 class TestAssetsRequest(TestCase):

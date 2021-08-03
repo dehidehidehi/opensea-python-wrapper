@@ -3,7 +3,8 @@ Assigns attributes to dictionnary values for easier object navigation.
 """
 from dataclasses import dataclass
 
-from open_sea_v1.responses.collection_obj import _CollectionResponse
+from open_sea_v1.responses.response__base import _OpenSeaAPIResponse
+from open_sea_v1.responses.response_collection import _CollectionResponse
 
 
 @dataclass
@@ -73,13 +74,17 @@ class _Contract:
 
 
 @dataclass
-class _AssetResponse:
+class _AssetResponse(_OpenSeaAPIResponse):
     _json: dict
 
     def __str__(self) -> str:
         return f"({_AssetResponse.__name__}, id={self.token_id.zfill(5)}, name={self.name})"
 
     def __post_init__(self):
+        self._set_common_attrs()
+        self._set_optional_attrs()
+
+    def _set_common_attrs(self):
         self.token_id = self._json["token_id"]
         self.num_sales = self._json["num_sales"]
         self.background_color = self._json["background_color"]
@@ -95,12 +100,19 @@ class _AssetResponse:
         self.permalink = self._json["permalink"]
         self.decimals = self._json["decimals"]
         self.token_metadata = self._json["token_metadata"]
-        self.sell_orders = self._json["sell_orders"]
-        self.top_bid = self._json["top_bid"]
-        self.listing_date = self._json["listing_date"]
-        self.is_presale = self._json["is_presale"]
-        self.transfer_fee_payment_token = self._json["transfer_fee_payment_token"]
-        self.transfer_fee = self._json["transfer_fee"]
+        self.id = self._json["id"]
+
+    def _set_optional_attrs(self):
+        """
+        Most asset responses are alike, but some are returned with less information.
+        To avoid raising KeyErrors, we will use the .get method when setting these attributes.
+        """
+        self.transfer_fee = self._json.get("transfer_fee")
+        self.transfer_fee_payment_token = self._json.get("transfer_fee_payment_token")
+        self.is_presale = self._json.get("is_presale")
+        self.listing_date = self._json.get("listing_date")
+        self.top_bid = self._json.get("top_bid")
+        self.sell_orders = self._json.get("sell_orders")
 
     @property
     def asset_contract(self) -> _Contract:
