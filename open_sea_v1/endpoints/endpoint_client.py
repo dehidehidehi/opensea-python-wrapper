@@ -1,9 +1,12 @@
+from typing import Optional
+
 from requests import Response, request
 
 
 class OpenSeaClient:
 
     api_key = None
+    _response: Optional[Response] = None
 
     @property
     def http_headers(self) -> dict:
@@ -12,14 +15,23 @@ class OpenSeaClient:
                 {"X-API-Key" : self.api_key} if self.api_key else dict(),
         }
 
-    def get_request(self, url: str, method: str = 'GET', **kwargs) -> Response:
+    def _get_request(self, url: str, method: str = 'GET', **kwargs) -> Response:
         """
-        Automatically passes in API key in HTTP get_request headers.
+        Automatically passes in API key in HTTP _get_request headers.
         """
         if 'api_key' in kwargs:
             self.api_key = kwargs.pop('api_key')
         updated_kwargs = kwargs | self.http_headers
         return request(method, url, **updated_kwargs)
+
+    @property
+    def http_response(self):
+        self._assert_get_request_was_called_before_accessing_this_property()
+        return self._response
+
+    def _assert_get_request_was_called_before_accessing_this_property(self):
+        if self._response is None:
+            raise AttributeError('You must call self.request prior to accessing self.response')
 
     # def collections(self, *, asset_owner: Optional[str] = None, offset: int, limit: int) -> OpenseaCollections:
     #     """
@@ -45,7 +57,7 @@ class OpenSeaClient:
     # def _collections(self, **_request_params) -> Response:
     #     """Returns HTTPResponse object."""
     #     url = OpenseaApiEndpoints.COLLECTIONS.value
-    #     return self.get_request("GET", url, _request_params=_request_params)
+    #     return self._get_request("GET", url, _request_params=_request_params)
     #
     # def asset(self, asset_contract_address: str, token_id: str, account_address: Optional[str] = None) -> OpenseaAsset:
     #     """

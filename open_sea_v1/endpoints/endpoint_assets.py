@@ -2,12 +2,10 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from requests import Response
-
-from open_sea_v1.endpoints.endpoint_urls import OpenseaApiEndpoints
-from open_sea_v1.endpoints.endpoint_client import OpenSeaClient
 from open_sea_v1.endpoints.endpoint_abc import BaseOpenSeaEndpoint
-from open_sea_v1.responses.asset_obj import _AssetResponse
+from open_sea_v1.endpoints.endpoint_client import OpenSeaClient
+from open_sea_v1.endpoints.endpoint_urls import OpenseaApiEndpoints
+from open_sea_v1.responses.response_asset import _AssetResponse
 
 
 class _AssetsOrderBy(str, Enum):
@@ -28,8 +26,6 @@ class _AssetsEndpoint(OpenSeaClient, BaseOpenSeaEndpoint):
 
     Parameters
     ----------
-    width:
-        width of the snake
 
     owner:
         The address of the owner of the assets
@@ -72,17 +68,11 @@ class _AssetsEndpoint(OpenSeaClient, BaseOpenSeaEndpoint):
     limit: int = 20
 
     def __post_init__(self):
-        self.validate_request_params()
-        self._response: Optional[Response] = None
-
-    @property
-    def http_response(self):
-        self._validate_response_property()
-        return self._response
+        self._validate_request_params()
 
     @property
     def response(self) -> list[_AssetResponse]:
-        self._validate_response_property()
+        self._assert_get_request_was_called_before_accessing_this_property()
         assets_json = self._response.json()['assets']
         assets = [_AssetResponse(asset_json) for asset_json in assets_json]
         return assets
@@ -92,7 +82,7 @@ class _AssetsEndpoint(OpenSeaClient, BaseOpenSeaEndpoint):
         return OpenseaApiEndpoints.ASSETS.value
 
     def get_request(self, *args, **kwargs):
-        self._response = super().get_request(self.url, **self._request_params)
+        self._response = self._get_request(self.url, **self._request_params)
 
     @property
     def _request_params(self) -> dict[dict]:
@@ -103,16 +93,12 @@ class _AssetsEndpoint(OpenSeaClient, BaseOpenSeaEndpoint):
         )
         return dict(api_key=self.api_key, params=params)
 
-    def validate_request_params(self) -> None:
+    def _validate_request_params(self) -> None:
         self._validate_mandatory_params()
         self._validate_asset_contract_addresses()
         self._validate_order_direction()
         self._validate_order_by()
         self._validate_limit()
-
-    def _validate_response_property(self):
-        if self._response is None:
-            raise AttributeError('You must call self.request prior to accessing self.response')
 
     def _validate_mandatory_params(self):
         mandatory = self.owner, self.token_ids, self.asset_contract_address, self.asset_contract_addresses, self.collection
@@ -123,7 +109,7 @@ class _AssetsEndpoint(OpenSeaClient, BaseOpenSeaEndpoint):
     def _validate_asset_contract_addresses(self):
         if self.asset_contract_address and self.asset_contract_addresses:
             raise ValueError(
-                "You cannot simultaneously get_request for a single contract_address and a list of contract_addresses."
+                "You cannot simultaneously _get_request for a single contract_address and a list of contract_addresses."
             )
 
         if self.token_ids and not (self.asset_contract_address or self.asset_contract_addresses):
