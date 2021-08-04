@@ -1,12 +1,15 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Generator
+
+from requests import Response
 
 from open_sea_v1.endpoints.endpoint_abc import BaseOpenSeaEndpoint
-from open_sea_v1.endpoints.endpoint_client import OpenSeaClient
+from open_sea_v1.endpoints.endpoint_client import BaseOpenSeaClient, _ClientParams
 from open_sea_v1.endpoints.endpoint_urls import OpenseaApiEndpoints
 from open_sea_v1.helpers.extended_classes import ExtendedStrEnum
 from open_sea_v1.responses import EventResponse
+from open_sea_v1.responses.response_abc import _OpenSeaResponse
 
 
 class EventType(ExtendedStrEnum):
@@ -32,18 +35,14 @@ class AuctionType(ExtendedStrEnum):
 
 
 @dataclass
-class _EventsEndpoint(OpenSeaClient, BaseOpenSeaEndpoint):
+class _EventsEndpoint(BaseOpenSeaClient, BaseOpenSeaEndpoint):
     """
     Opensea API Events Endpoint
 
     Parameters
     ----------
-
-    offset:
-        Offset for pagination
-
-    limit:
-        Limit for pagination
+    client_params:
+        ClientParams instance.
 
     asset_contract_address:
         The NFT contract address for the assets for which to show events
@@ -68,18 +67,16 @@ class _EventsEndpoint(OpenSeaClient, BaseOpenSeaEndpoint):
 
     :return: Parsed JSON
     """
-    offset: int
-    limit: int
-    asset_contract_address: str
-    event_type: EventType
-    only_opensea: bool
-    collection_slug: Optional[str] = None
+    client_params: _ClientParams = None
+    asset_contract_address: str = None
     token_id: Optional[str] = None
+    collection_slug: Optional[str] = None
     account_address: Optional[str] = None
-    auction_type: Optional[AuctionType] = None
     occurred_before: Optional[datetime] = None
     occurred_after: Optional[datetime] = None
-    api_key: Optional[str] = None
+    event_type: EventType = None
+    auction_type: Optional[AuctionType] = None
+    only_opensea: bool = False
 
     def __post_init__(self):
         self._validate_request_params()
@@ -88,18 +85,27 @@ class _EventsEndpoint(OpenSeaClient, BaseOpenSeaEndpoint):
     def url(self) -> str:
         return OpenseaApiEndpoints.EVENTS.value
 
-    @property
-    def _request_params(self) -> dict:
-        params = dict(offset=self.offset, limit=self.limit, asset_contract_address=self.asset_contract_address, event_type=self.event_type, only_opensea=self.only_opensea, collection_slug=self.collection_slug, token_id=self.token_id, account_address=self.account_address, auction_type=self.auction_type, occurred_before=self.occurred_before, occurred_after=self.occurred_after)
-        return dict(api_key=self.api_key, params=params)
+    def _get_request(self, **kwargs) -> Response:
+        params = dict(
+            offset=self.client_params.offset,
+            limit=self.client_params.limit,
+            asset_contract_address=self.asset_contract_address,
+            event_type=self.event_type,
+            only_opensea=self.only_opensea,
+            collection_slug=self.collection_slug,
+            token_id=self.token_id,
+            account_address=self.account_address,
+            auction_type=self.auction_type,
+            occurred_before=self.occurred_before,
+            occurred_after=self.occurred_after
+        )
+        get_request_kwargs = dict(params=params)
+        self._http_response = super()._get_request(**get_request_kwargs)
+        return self._http_response
 
-    def get_request(self, **kwargs):
-        self._response = self._get_request(self.url, **self._request_params)
-
     @property
-    def response(self) -> list[EventResponse]:
-        self._assert_get_request_was_called_before_accessing_this_property()
-        events_json = self._response.json()['asset_events']
+    def parsed_http_response(self) -> list[EventResponse]:
+        events_json = self._http_response.json()['asset_events']
         events = [EventResponse(event) for event in events_json]
         return events
 

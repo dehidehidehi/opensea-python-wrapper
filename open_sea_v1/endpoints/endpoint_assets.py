@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Optional, Generator
 
 from open_sea_v1.endpoints.endpoint_abc import BaseOpenSeaEndpoint
-from open_sea_v1.endpoints.endpoint_client import OpenSeaClient
+from open_sea_v1.endpoints.endpoint_client import BaseOpenSeaClient, _ClientParams
 from open_sea_v1.endpoints.endpoint_urls import OpenseaApiEndpoints
-from open_sea_v1.responses.response_asset import _AssetResponse
+from open_sea_v1.responses import AssetResponse
 
 
 class _AssetsOrderBy(str, Enum):
@@ -20,12 +20,14 @@ class _AssetsOrderBy(str, Enum):
 
 
 @dataclass
-class _AssetsEndpoint(OpenSeaClient, BaseOpenSeaEndpoint):
+class _AssetsEndpoint(BaseOpenSeaClient, BaseOpenSeaEndpoint):
     """
     Opensea API Assets Endpoint
 
     Parameters
     ----------
+    client_params:
+        Common endpoint params.
 
     owner:
         The address of the owner of the assets
@@ -45,53 +47,48 @@ class _AssetsEndpoint(OpenSeaClient, BaseOpenSeaEndpoint):
     order_direction:
         Can be asc for ascending or desc for descending
 
-    offset:
-        Offset
-
-    limit:
-        Defaults to 20, capped at 50.
-
     collection:
         Limit responses to members of a collection. Case sensitive and must match the collection slug exactly. Will return all assets from all contracts in a collection.
 
     :return: Parsed JSON
     """
-    api_key: Optional[str] = None
-    owner: Optional[str] = None
-    token_ids: Optional[list[int]] = None
+    client_params: _ClientParams = None
     asset_contract_address: Optional[list[str]] = None
     asset_contract_addresses: Optional[str] = None
+    token_ids: Optional[list[int]] = None
     collection: Optional[str] = None
+    owner: Optional[str] = None
     order_by: Optional[_AssetsOrderBy] = None
     order_direction: str = None
-    offset: int = 0
-    limit: int = 20
 
     def __post_init__(self):
         self._validate_request_params()
 
     @property
-    def response(self) -> list[_AssetResponse]:
-        self._assert_get_request_was_called_before_accessing_this_property()
-        assets_json = self._response.json()['assets']
-        assets = [_AssetResponse(asset_json) for asset_json in assets_json]
-        return assets
-
-    @property
     def url(self):
         return OpenseaApiEndpoints.ASSETS.value
 
-    def get_request(self, *args, **kwargs):
-        self._response = self._get_request(self.url, **self._request_params)
-
     @property
-    def _request_params(self) -> dict[dict]:
+    def parsed_http_response(self) -> list[AssetResponse]:
+        assets_json = self._http_response.json()['assets']
+        assets = [AssetResponse(asset_json) for asset_json in assets_json]
+        return assets
+
+    def _get_request(self, **kwargs):
         params = dict(
-            owner=self.owner, token_ids=self.token_ids, asset_contract_address=self.asset_contract_address,
-            asset_contract_addresses=self.asset_contract_addresses, collection=self.collection,
-            order_by=self.order_by, order_direction=self.order_direction, offset=self.offset, limit=self.limit
+            owner=self.owner,
+            token_ids=self.token_ids,
+            asset_contract_address=self.asset_contract_address,
+            asset_contract_addresses=self.asset_contract_addresses,
+            collection=self.collection,
+            order_by=self.order_by,
+            order_direction=self.order_direction,
+            offset=self.client_params.offset,
+            limit=self.client_params.limit,
         )
-        return dict(api_key=self.api_key, params=params)
+        get_request_kwargs = dict(params=params)
+        self._http_response = super()._get_request(**get_request_kwargs)
+        return self._http_response
 
     def _validate_request_params(self) -> None:
         self._validate_mandatory_params()
@@ -139,5 +136,5 @@ class _AssetsEndpoint(OpenSeaClient, BaseOpenSeaEndpoint):
             )
 
     def _validate_limit(self):
-        if not isinstance(self.limit, int) or not 0 <= self.limit <= 50:
+        if not isinstance(self.client_params.limit, int) or not 0 <= self.client_params.limit <= 50:
             raise ValueError(f"limit param must be an int between 0 and 50.")
