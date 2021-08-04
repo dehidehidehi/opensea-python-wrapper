@@ -2,23 +2,24 @@ from unittest import TestCase
 from datetime import datetime, timedelta
 
 from open_sea_v1.endpoints import EventsEndpoint, EventType, AuctionType
+from open_sea_v1.endpoints import ClientParams
 
 
 class TestEventsEndpoint(TestCase):
-    sample_contract = "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb"  # punk
     events_default_kwargs = dict(
-        offset=0, limit=1, asset_contract_address=sample_contract,
-        only_opensea=False, event_type=EventType.SUCCESSFUL,
+        client_params=ClientParams(limit=1),
+        asset_contract_address="0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",  # punk
+        event_type=EventType.SUCCESSFUL,
     )
 
     @staticmethod
     def create_and_get(**kwargs):
         endpoint = EventsEndpoint(**kwargs)
-        endpoint.get_request()
-        return endpoint.response
+        endpoint._get_request()
+        return endpoint.parsed_http_response
 
     def test_param_event_type_filters_properly(self):
-        updated_kwargs = self.events_default_kwargs | dict(limit=5)
+        updated_kwargs = self.events_default_kwargs | dict(client_params=ClientParams(limit=5))
         punks_events = self.create_and_get(**updated_kwargs)
         self.assertTrue(all(e.event_type == EventType.SUCCESSFUL for e in punks_events))
 
@@ -27,7 +28,8 @@ class TestEventsEndpoint(TestCase):
         self.assertRaises((ValueError, TypeError), self.create_and_get, **updated_kwargs)
 
     def test_param_auction_type_filters_properly(self):
-        updated_kwargs = self.events_default_kwargs | dict(limit=5, auction_type=AuctionType.DUTCH)
+        new_client_params = ClientParams(limit=5)
+        updated_kwargs = self.events_default_kwargs | dict(client_params=new_client_params, auction_type=AuctionType.DUTCH)
         punks_events = self.create_and_get(**updated_kwargs)
         self.assertTrue(all(e.auction_type == AuctionType.DUTCH for e in punks_events))
 
@@ -44,7 +46,8 @@ class TestEventsEndpoint(TestCase):
         self.create_and_get(**updated_kwargs)
 
     def test_param_only_opensea_true_filters_properly(self):
-        updated_kwargs = self.events_default_kwargs | dict(only_opensea=True, limit=2)
+        new_client_params = ClientParams(limit=2)
+        updated_kwargs = self.events_default_kwargs | dict(only_opensea=True, client_params=new_client_params)
         events = self.create_and_get(**updated_kwargs)
         self.assertTrue(all('opensea.io' in event.asset.permalink for event in events))
 
@@ -80,14 +83,16 @@ class TestEventsEndpoint(TestCase):
 
     def test_param_occurred_after_filters_properly(self):
         occurred_after = datetime(year=2021, month=8, day=1)
-        updated_kwargs = self.events_default_kwargs | dict(occurred_after=occurred_after, limit=5)
+        new_client_params = ClientParams(limit=5)
+        updated_kwargs = self.events_default_kwargs | dict(occurred_after=occurred_after, client_params=new_client_params)
         events = self.create_and_get(**updated_kwargs)
         transaction_datetimes = [datetime.fromisoformat(event.transaction['timestamp']) for event in events]
         self.assertTrue(all(trans_date >= occurred_after for trans_date in transaction_datetimes))
 
     def test_param_occurred_before_filters_properly(self):
         occurred_before = datetime(year=2021, month=8, day=1)
-        updated_kwargs = self.events_default_kwargs | dict(occurred_before=occurred_before, limit=5)
+        new_client_params = ClientParams(limit=5)
+        updated_kwargs = self.events_default_kwargs | dict(occurred_before=occurred_before, client_params=new_client_params)
         events = self.create_and_get(**updated_kwargs)
         transaction_datetimes = [datetime.fromisoformat(event.transaction['timestamp']) for event in events]
         self.assertTrue(all(trans_date < occurred_before for trans_date in transaction_datetimes))
@@ -95,7 +100,9 @@ class TestEventsEndpoint(TestCase):
     def test_params_occurred_before_after_work_together(self):
         occurred_after = datetime(year=2021, month=7, day=30)
         occurred_before = datetime(year=2021, month=8, day=2)
-        updated_kwargs = self.events_default_kwargs | dict(occurred_after=occurred_after, occurred_before=occurred_before, limit=5)
+        new_client_params = ClientParams(limit=5)
+        kwargs = dict(occurred_after=occurred_after, occurred_before=occurred_before, client_params=new_client_params)
+        updated_kwargs = self.events_default_kwargs | kwargs
         events = self.create_and_get(**updated_kwargs)
         transaction_datetimes = [datetime.fromisoformat(event.transaction['timestamp']) for event in events]
         self.assertTrue(all(occurred_after <= trans_date <= occurred_before for trans_date in transaction_datetimes))

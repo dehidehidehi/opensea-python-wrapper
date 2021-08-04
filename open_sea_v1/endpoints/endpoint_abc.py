@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Union
+from typing import Optional, Union, Generator
 
 from requests import Response
 
-from open_sea_v1.responses.response__base import _OpenSeaAPIResponse
+from open_sea_v1.endpoints.endpoint_client import _ClientParams
+from open_sea_v1.responses.response_abc import _OpenSeaResponse
 
 
 class BaseOpenSeaEndpoint(ABC):
@@ -15,8 +16,8 @@ class BaseOpenSeaEndpoint(ABC):
 
     @property
     @abstractmethod
-    def api_key(self) -> Optional[str]:
-        """Optional OpenSea API key"""
+    def client_params(self) -> _ClientParams:
+        """Instance of common OpenSea Endpoint parameters."""
 
     @property
     @abstractmethod
@@ -25,25 +26,19 @@ class BaseOpenSeaEndpoint(ABC):
 
     @property
     @abstractmethod
-    def _request_params(self) -> dict:
-        """Dictionnary of _request_params to pass into the _get_request."""
+    def get_pages(self) -> Generator[list[list[_OpenSeaResponse]], None, None]:
+        """Returns all pages for the query."""
+
+    @property
+    @abstractmethod
+    def parsed_http_response(self) -> Union[list[_OpenSeaResponse], _OpenSeaResponse]:
+        """Parsed JSON dictionnary from HTTP Response."""
+
+    @abstractmethod
+    def _get_request(self) -> Response:
+        """Returns HTTP parsed_http_response from OpenSea."""
 
     @property
     @abstractmethod
     def _validate_request_params(self) -> None:
         """"""
-
-    @property
-    @abstractmethod
-    def response(self) -> Union[list[_OpenSeaAPIResponse], _OpenSeaAPIResponse]:
-        """Parsed JSON dictionnary from HTTP Response."""
-
-    @property
-    @abstractmethod
-    def http_response(self) -> Optional[Response]:
-        """HTTP Response from Opensea API."""
-
-    @abstractmethod
-    def get_request(self, url: str, method: str = 'GET', **kwargs) -> Response:
-        """Call to super()._get_request passing url and _request_params."""
-

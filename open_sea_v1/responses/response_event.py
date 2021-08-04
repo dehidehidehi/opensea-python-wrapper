@@ -1,15 +1,15 @@
 from dataclasses import dataclass
 
 from open_sea_v1.responses import AssetResponse
-from open_sea_v1.responses.response__base import _OpenSeaAPIResponse
+from open_sea_v1.responses.response_abc import _OpenSeaResponse
 
 
 @dataclass
-class _EventReponse(_OpenSeaAPIResponse):
+class _EventReponse(_OpenSeaResponse):
     _json: dict
 
     def __str__(self) -> str:
-        return f"{self.event_type=}, {self.total_price=}"
+        return f"{self.transaction['timestamp'][:10]}, {self.event_type=}, {self.total_price=}"
 
     def __post_init__(self):
         self.approved_account = self._json['approved_account']

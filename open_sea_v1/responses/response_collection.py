@@ -3,7 +3,7 @@ Assigns attributes to dictionnary values for easier object navigation.
 """
 from dataclasses import dataclass
 
-from open_sea_v1.responses.response__base import _OpenSeaAPIResponse
+from open_sea_v1.responses.response_abc import _OpenSeaResponse
 
 
 @dataclass
@@ -38,7 +38,7 @@ class _CollectionStats:
 
 
 @dataclass
-class _CollectionResponse(_OpenSeaAPIResponse):
+class _CollectionResponse(_OpenSeaResponse):
     _json: dict
 
     def __str__(self) -> str:
