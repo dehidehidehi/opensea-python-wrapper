@@ -1,15 +1,14 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Generator
+from typing import Optional
 
 from requests import Response
 
-from open_sea_v1.endpoints.endpoint_abc import BaseOpenSeaEndpoint
-from open_sea_v1.endpoints.endpoint_client import BaseOpenSeaClient, _ClientParams
-from open_sea_v1.endpoints.endpoint_urls import OpenseaApiEndpoints
+from open_sea_v1.endpoints.client import BaseClient, ClientParams
+from open_sea_v1.endpoints.abc import BaseEndpoint
+from open_sea_v1.endpoints.urls import EndpointURLS
 from open_sea_v1.helpers.extended_classes import ExtendedStrEnum
-from open_sea_v1.responses import EventResponse
-from open_sea_v1.responses.response_abc import _OpenSeaResponse
+from open_sea_v1.responses.event import EventResponse
 
 
 class EventType(ExtendedStrEnum):
@@ -35,7 +34,7 @@ class AuctionType(ExtendedStrEnum):
 
 
 @dataclass
-class _EventsEndpoint(BaseOpenSeaClient, BaseOpenSeaEndpoint):
+class EventsEndpoint(BaseClient, BaseEndpoint):
     """
     Opensea API Events Endpoint
 
@@ -67,7 +66,7 @@ class _EventsEndpoint(BaseOpenSeaClient, BaseOpenSeaEndpoint):
 
     :return: Parsed JSON
     """
-    client_params: _ClientParams = None
+    client_params: ClientParams = None
     asset_contract_address: str = None
     token_id: Optional[str] = None
     collection_slug: Optional[str] = None
@@ -83,7 +82,7 @@ class _EventsEndpoint(BaseOpenSeaClient, BaseOpenSeaEndpoint):
 
     @property
     def url(self) -> str:
-        return OpenseaApiEndpoints.EVENTS.value
+        return EndpointURLS.EVENTS.value
 
     def _get_request(self, **kwargs) -> Response:
         params = dict(
@@ -115,6 +114,9 @@ class _EventsEndpoint(BaseOpenSeaClient, BaseOpenSeaEndpoint):
         self._validate_params_occurred_before_and_occurred_after()
 
     def _validate_param_event_type(self) -> None:
+        if self.event_type is None:
+            return
+
         if not isinstance(self.event_type, (str, EventType)):
             raise TypeError('Invalid event_type type. Must be str or EventType Enum.', f"{self.event_type=}")
 

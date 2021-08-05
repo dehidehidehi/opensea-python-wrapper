@@ -4,10 +4,10 @@ from typing import Optional, Generator
 
 from requests import Response, request
 
-from open_sea_v1.responses import OpenSeaAPIResponse
+from open_sea_v1.responses.abc import BaseResponse
 
 @dataclass
-class _ClientParams:
+class ClientParams:
     """Common OpenSea Endpoint parameters to pass in."""
     offset: int = 0
     limit: int = 20
@@ -15,8 +15,8 @@ class _ClientParams:
     api_key: Optional[str] = None
 
 
-class BaseOpenSeaClient(ABC):
-    client_params: _ClientParams
+class BaseClient(ABC):
+    client_params: ClientParams
     processed_pages: int = 0
     response = None
     parsed_http_response = None
@@ -34,19 +34,29 @@ class BaseOpenSeaClient(ABC):
         updated_kwargs = kwargs | self.http_headers
         return request('GET', self.url, **updated_kwargs)
 
-    def get_pages(self) -> Generator[list[list[OpenSeaAPIResponse]], None, None]:
+    def get_pages(self) -> Generator[list[list[BaseResponse]], None, None]:
+        self.processed_pages = 0
+        self.client_params.offset = 0
         self._http_response = None
+
         while self.remaining_pages():
             self._http_response = self._get_request()
-            yield self.parsed_http_response
-            self.client_params.offset += self.client_params.limit
-            self.processed_pages += 1
+            if self.parsed_http_response:  # edge case
+                self.processed_pages += 1
+                self.client_params.offset += self.client_params.limit
+                yield self.parsed_http_response
 
     def remaining_pages(self) -> bool:
         if self._http_response is None:
             return True
-        if self.client_params.max_pages is not None and self.processed_pages <= self.client_params.max_pages:
+
+        if all((
+                (max_pages_was_set := self.client_params.max_pages is not None),
+                (previous_page_was_not_empty := len(self.parsed_http_response) > 0),
+                (remaining_pages_until_max_pages := self.processed_pages <= self.client_params.max_pages),
+        )):
             return True
-        if len(self.response) >= self.client_params.offset:
+
+        if is_not_the_last_page := len(self.parsed_http_response) >= self.client_params.offset:
             return True
         return False

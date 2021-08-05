@@ -1,8 +1,8 @@
 from itertools import combinations
 from unittest import TestCase
 
-from open_sea_v1.endpoints import AssetsEndpoint, AssetsOrderBy, ClientParams
-from open_sea_v1.responses import AssetResponse
+from open_sea_v1.endpoints.assets import AssetsEndpoint, AssetsOrderBy, ClientParams
+from open_sea_v1.responses.asset import AssetResponse
 
 
 class TestAssetsRequest(TestCase):

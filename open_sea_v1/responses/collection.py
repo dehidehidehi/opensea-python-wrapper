@@ -3,7 +3,7 @@ Assigns attributes to dictionnary values for easier object navigation.
 """
 from dataclasses import dataclass
 
-from open_sea_v1.responses.response_abc import _OpenSeaResponse
+from open_sea_v1.responses.abc import BaseResponse
 
 
 @dataclass
@@ -38,11 +38,11 @@ class _CollectionStats:
 
 
 @dataclass
-class _CollectionResponse(_OpenSeaResponse):
+class CollectionResponse(BaseResponse):
     _json: dict
 
     def __str__(self) -> str:
-        return f"({_CollectionResponse.__name__}, {self.name=}, {self.short_description=})"
+        return f"({CollectionResponse.__name__}, {self.name=}, {self.short_description=})"
 
     def __post_init__(self):
         self.banner_image_url = self._json["banner_image_url"]
