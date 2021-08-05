@@ -2,13 +2,13 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Generator
 
-from open_sea_v1.endpoints.endpoint_abc import BaseOpenSeaEndpoint
-from open_sea_v1.endpoints.endpoint_client import BaseOpenSeaClient, _ClientParams
-from open_sea_v1.endpoints.endpoint_urls import OpenseaApiEndpoints
-from open_sea_v1.responses import AssetResponse
+from open_sea_v1.endpoints.abc import BaseEndpoint
+from open_sea_v1.endpoints.client import BaseClient, ClientParams
+from open_sea_v1.endpoints.urls import EndpointURLS
+from open_sea_v1.responses.asset import AssetResponse
 
 
-class _AssetsOrderBy(str, Enum):
+class AssetsOrderBy(str, Enum):
     """
     Helper Enum for remembering the possible values for the order_by param of the AssetsEndpoint class.
     """
@@ -20,7 +20,7 @@ class _AssetsOrderBy(str, Enum):
 
 
 @dataclass
-class _AssetsEndpoint(BaseOpenSeaClient, BaseOpenSeaEndpoint):
+class AssetsEndpoint(BaseClient, BaseEndpoint):
     """
     Opensea API Assets Endpoint
 
@@ -52,13 +52,13 @@ class _AssetsEndpoint(BaseOpenSeaClient, BaseOpenSeaEndpoint):
 
     :return: Parsed JSON
     """
-    client_params: _ClientParams = None
+    client_params: ClientParams = None
     asset_contract_address: Optional[list[str]] = None
     asset_contract_addresses: Optional[str] = None
     token_ids: Optional[list[int]] = None
     collection: Optional[str] = None
     owner: Optional[str] = None
-    order_by: Optional[_AssetsOrderBy] = None
+    order_by: Optional[AssetsOrderBy] = None
     order_direction: str = None
 
     def __post_init__(self):
@@ -66,7 +66,7 @@ class _AssetsEndpoint(BaseOpenSeaClient, BaseOpenSeaEndpoint):
 
     @property
     def url(self):
-        return OpenseaApiEndpoints.ASSETS.value
+        return EndpointURLS.ASSETS.value
 
     @property
     def parsed_http_response(self) -> list[AssetResponse]:
@@ -129,10 +129,10 @@ class _AssetsEndpoint(BaseOpenSeaClient, BaseOpenSeaEndpoint):
         if self.order_by is None:
             return
 
-        if self.order_by not in (_AssetsOrderBy.TOKEN_ID, _AssetsOrderBy.SALE_COUNT, _AssetsOrderBy.SALE_DATE, _AssetsOrderBy.SALE_PRICE, _AssetsOrderBy.VISITOR_COUNT):
+        if self.order_by not in (AssetsOrderBy.TOKEN_ID, AssetsOrderBy.SALE_COUNT, AssetsOrderBy.SALE_DATE, AssetsOrderBy.SALE_PRICE, AssetsOrderBy.VISITOR_COUNT):
             raise ValueError(
                 f"order_by param value ({self.order_by}) is invalid. "
-                f"Must be a value from {_AssetsOrderBy.list()}, case sensitive."
+                f"Must be a value from {AssetsOrderBy.list()}, case sensitive."
             )
 
     def _validate_limit(self):

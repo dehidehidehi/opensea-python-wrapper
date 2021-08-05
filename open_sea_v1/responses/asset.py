@@ -3,8 +3,8 @@ Assigns attributes to dictionnary values for easier object navigation.
 """
 from dataclasses import dataclass
 
-from open_sea_v1.responses.response_abc import _OpenSeaResponse
-from open_sea_v1.responses.response_collection import _CollectionResponse
+from open_sea_v1.responses.abc import BaseResponse
+from open_sea_v1.responses.collection import CollectionResponse
 
 
 @dataclass
@@ -74,11 +74,11 @@ class _Contract:
 
 
 @dataclass
-class _AssetResponse(_OpenSeaResponse):
+class AssetResponse(BaseResponse):
     _json: dict
 
     def __str__(self) -> str:
-        return f"({_AssetResponse.__name__}, id={self.token_id.zfill(5)}, name={self.name})"
+        return f"({AssetResponse.__name__}, id={self.token_id.zfill(5)}, name={self.name})"
 
     def __post_init__(self):
         self._set_common_attrs()
@@ -132,7 +132,7 @@ class _AssetResponse(_OpenSeaResponse):
 
     @property
     def collection(self):
-        return _CollectionResponse(self._json['collection'])
+        return CollectionResponse(self._json['collection'])
 
     @property
     def creator(self) -> dict:

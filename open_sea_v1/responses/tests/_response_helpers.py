@@ -1,12 +1,12 @@
 from unittest import TestCase
 
-from open_sea_v1.responses.response_abc import _OpenSeaResponse
+from open_sea_v1.responses.abc import BaseResponse
 
 
 class ResponseTestHelper(TestCase):
 
     @classmethod
-    def create_and_get(cls, endpoint_client,  **kwargs) -> list[_OpenSeaResponse]:
+    def create_and_get(cls, endpoint_client,  **kwargs) -> list[BaseResponse]:
         """Shortcut"""
         client = endpoint_client(**kwargs)
         client._get_request()

@@ -3,11 +3,11 @@ from typing import Optional, Union, Generator
 
 from requests import Response
 
-from open_sea_v1.endpoints.endpoint_client import _ClientParams
-from open_sea_v1.responses.response_abc import _OpenSeaResponse
+from open_sea_v1.endpoints.client import ClientParams
+from open_sea_v1.responses.abc import BaseResponse
 
 
-class BaseOpenSeaEndpoint(ABC):
+class BaseEndpoint(ABC):
 
     @property
     @abstractmethod
@@ -16,7 +16,7 @@ class BaseOpenSeaEndpoint(ABC):
 
     @property
     @abstractmethod
-    def client_params(self) -> _ClientParams:
+    def client_params(self) -> ClientParams:
         """Instance of common OpenSea Endpoint parameters."""
 
     @property
@@ -26,12 +26,7 @@ class BaseOpenSeaEndpoint(ABC):
 
     @property
     @abstractmethod
-    def get_pages(self) -> Generator[list[list[_OpenSeaResponse]], None, None]:
-        """Returns all pages for the query."""
-
-    @property
-    @abstractmethod
-    def parsed_http_response(self) -> Union[list[_OpenSeaResponse], _OpenSeaResponse]:
+    def parsed_http_response(self) -> Union[list[BaseResponse], BaseResponse]:
         """Parsed JSON dictionnary from HTTP Response."""
 
     @abstractmethod
@@ -42,3 +37,7 @@ class BaseOpenSeaEndpoint(ABC):
     @abstractmethod
     def _validate_request_params(self) -> None:
         """"""
+
+    @abstractmethod
+    def get_pages(self) -> Generator[list[list[BaseResponse]], None, None]:
+        """Returns all pages for the query."""
