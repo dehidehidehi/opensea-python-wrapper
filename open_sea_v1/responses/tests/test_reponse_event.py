@@ -14,6 +14,7 @@ class TestEventsObj(ResponseTestHelper):
     def setUpClass(cls) -> None:
         cls.events = cls.create_and_get(EventsEndpoint, **cls.events_default_kwargs)
         cls.event = cls.events[0]
+        event_name_str = str(cls.event)
 
     def test_attributes_do_not_raise_unexpected_exceptions(self):
         self.assert_attributes_do_not_raise_unexpected_exceptions(self.event)

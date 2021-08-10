@@ -26,7 +26,14 @@ class ResponseParser:
         with open(str(self.destination), 'w') as f:
             json.dump(the_jsons, f)
 
-    def load(self) -> Any:
+    def load(self, json_path: Optional[Path] = None) -> Any:
+        json_path = self.destination if not json_path else json_path
         with open(str(self.destination), 'r') as f:
             parsed_json = json.load(f)
         return [self.response_type(collection) for collection in parsed_json]
+
+    def load_from_dir(self) -> Any:
+        detected_json_files = (p for p in self.destination.iterdir() if '.json' in p.name and not p.is_dir())
+        resp = list()
+        for json_path in detected_json_files:
+            resp.append(self.load(destination=json_path))

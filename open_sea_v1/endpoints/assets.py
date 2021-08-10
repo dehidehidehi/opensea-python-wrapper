@@ -55,7 +55,7 @@ class AssetsEndpoint(BaseClient, BaseEndpoint):
     client_params: ClientParams = None
     asset_contract_address: Optional[list[str]] = None
     asset_contract_addresses: Optional[str] = None
-    token_ids: Optional[list[int]] = None
+    token_ids: Optional[list[str]] = None
     collection: Optional[str] = None
     owner: Optional[str] = None
     order_by: Optional[AssetsOrderBy] = None
@@ -136,5 +136,9 @@ class AssetsEndpoint(BaseClient, BaseEndpoint):
             )
 
     def _validate_limit(self):
-        if not isinstance(self.client_params.limit, int) or not 0 <= self.client_params.limit <= 50:
+        if self.client_params.limit is None:
+            return
+        if not isinstance(self.client_params.limit, int):
+            raise TypeError("limit client param must be an int")
+        if not 0 <= self.client_params.limit <= 50:
             raise ValueError(f"limit param must be an int between 0 and 50.")

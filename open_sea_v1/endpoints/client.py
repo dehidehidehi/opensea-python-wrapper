@@ -10,9 +10,14 @@ from open_sea_v1.responses.abc import BaseResponse
 class ClientParams:
     """Common OpenSea Endpoint parameters to pass in."""
     offset: int = 0
-    limit: int = 20
+    page_size: int = 50
+    limit: Optional[int] = None
     max_pages: Optional[int] = None
     api_key: Optional[str] = None
+
+    def __post_init__(self):
+        if self.limit is not None and not 0 < int(self.limit) <= 300:
+            raise ValueError(f'{self.limit=} max value is 300.')
 
 
 class BaseClient(ABC):
@@ -43,18 +48,16 @@ class BaseClient(ABC):
             self._http_response = self._get_request()
             if self.parsed_http_response:  # edge case
                 self.processed_pages += 1
-                self.client_params.offset += self.client_params.limit
+                self.client_params.offset += self.client_params.page_size
                 yield self.parsed_http_response
 
     def remaining_pages(self) -> bool:
         if self._http_response is None:
             return True
 
-        if all((
-                (max_pages_was_set := self.client_params.max_pages is not None),
-                (previous_page_was_not_empty := len(self.parsed_http_response) > 0),
-                (remaining_pages_until_max_pages := self.processed_pages <= self.client_params.max_pages),
-        )):
+        if (max_pages_was_set := self.client_params.max_pages is not None) and \
+            (previous_page_was_not_empty := len(self.parsed_http_response) > 0) and \
+                (remaining_pages_until_max_pages := self.processed_pages <= self.client_params.max_pages):
             return True
 
         if is_not_the_last_page := len(self.parsed_http_response) >= self.client_params.offset:

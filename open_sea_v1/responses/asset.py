@@ -2,6 +2,7 @@
 Assigns attributes to dictionnary values for easier object navigation.
 """
 from dataclasses import dataclass
+from typing import Optional
 
 from open_sea_v1.responses.abc import BaseResponse
 from open_sea_v1.responses.collection import CollectionResponse
@@ -77,8 +78,10 @@ class _Contract:
 class AssetResponse(BaseResponse):
     _json: dict
 
-    def __str__(self) -> str:
-        return f"({AssetResponse.__name__}, id={self.token_id.zfill(5)}, name={self.name})"
+    def __str__(self):
+        id_str = f"token_id={self.token_id.zfill(5)}"
+        name = f"name={self.name}"
+        return "    ".join([id_str, name])
 
     def __post_init__(self):
         self._set_common_attrs()
@@ -123,17 +126,23 @@ class AssetResponse(BaseResponse):
         return _Owner(self._json['owner'])
 
     @property
-    def traits(self) -> list[_Traits]:
-        return [_Traits(traits) for traits in self._json['traits']]
+    def traits(self) -> Optional[list[_Traits]]:
+        traits = self._json.get('traits')
+        if traits:
+            return [_Traits(traits) for traits in self._json['traits']]
+        return None
 
     @property
-    def last_sale(self) -> _LastSale:
-        return _LastSale(self._json['last_sale'])
+    def last_sale(self) -> Optional[_LastSale]:
+        last_sale = self._json.get('last_sale')
+        if last_sale:
+            return _LastSale(self._json['last_sale'])
+        return None
 
     @property
     def collection(self):
         return CollectionResponse(self._json['collection'])
 
     @property
-    def creator(self) -> dict:
-        return self._json['creator']
+    def creator(self) -> Optional[dict]:
+        return self._json.get('creator')

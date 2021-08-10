@@ -15,6 +15,7 @@ class TestAssetObj(ResponseTestHelper):
         params = cls.default_asset_params | dict(token_ids=[1, 14, 33])
         cls.assets = cls.create_and_get(AssetsEndpoint, **params)
         cls.asset = cls.assets[0]
+        ...
 
     def test_attributes_do_not_raise_unexpected_exceptions(self):
         self.assert_attributes_do_not_raise_unexpected_exceptions(self.asset)

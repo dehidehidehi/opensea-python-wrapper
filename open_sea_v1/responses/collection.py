@@ -2,6 +2,7 @@
 Assigns attributes to dictionnary values for easier object navigation.
 """
 from dataclasses import dataclass
+from typing import Optional
 
 from open_sea_v1.responses.abc import BaseResponse
 
@@ -11,7 +12,7 @@ class _CollectionStats:
     _json: dict
 
     def __str__(self) -> str:
-        return f"({_CollectionStats.__name__}, {self.floor_price=}, {self.average_price=}, {self.market_cap=})"
+        return f"{self.floor_price=}    {self.average_price=}   {self.market_cap=})"
 
     def __post_init__(self):
         self.one_day_volume = self._json["one_day_volume"]
@@ -42,9 +43,11 @@ class CollectionResponse(BaseResponse):
     _json: dict
 
     def __str__(self) -> str:
-        return f"({CollectionResponse.__name__}, {self.name=}, {self.short_description=})"
+        return f"{self.name=}   {self.short_description=})"
 
     def __post_init__(self):
+        self.primary_asset_contracts: Optional[list] = self._json.get('primary_asset_contracts')
+        self.traits: Optional[dict] = self._json.get('traits')
         self.banner_image_url = self._json["banner_image_url"]
         self.chat_url = self._json["chat_url"]
         self.created_date = self._json["created_date"]
@@ -77,5 +80,6 @@ class CollectionResponse(BaseResponse):
         self.name = self._json["name"]
 
     @property
-    def stats(self) -> _CollectionStats:
-        return _CollectionStats(self._json['stats'])
+    def stats(self) -> Optional[_CollectionStats]:
+        stats = self._json.get('stats')
+        return _CollectionStats(stats) if stats else None
