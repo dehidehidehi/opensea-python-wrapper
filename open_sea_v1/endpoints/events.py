@@ -68,7 +68,7 @@ class EventsEndpoint(BaseClient, BaseEndpoint):
     """
     client_params: ClientParams = None
     asset_contract_address: str = None
-    token_id: Optional[str] = None
+    token_id: Optional[int] = None
     collection_slug: Optional[str] = None
     account_address: Optional[str] = None
     occurred_before: Optional[datetime] = None
@@ -96,7 +96,7 @@ class EventsEndpoint(BaseClient, BaseEndpoint):
             account_address=self.account_address,
             auction_type=self.auction_type,
             occurred_before=self.occurred_before,
-            occurred_after=self.occurred_after
+            occurred_after=self.occurred_after,
         )
         get_request_kwargs = dict(params=params)
         self._http_response = super()._get_request(**get_request_kwargs)
