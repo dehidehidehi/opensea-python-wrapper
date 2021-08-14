@@ -1,17 +1,13 @@
 import logging
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, Generator, Union, Type
+from typing import Optional, Generator
 
-from ratelimit import limits, sleep_and_retry
 from requests import Response, request
 
 from open_sea_v1.responses.abc import BaseResponse
 
 logger = logging.getLogger(__name__)
-
-MAX_CALLS_PER_SECOND = 2  # gets overriden if API key is passed to ClientParams instance
-RATE_LIMIT = 1  # second
 
 @dataclass
 class ClientParams:
@@ -25,7 +21,6 @@ class ClientParams:
     def __post_init__(self):
         self._validate_attrs()
         self._decrement_max_pages_attr()
-        self._set_max_rate_limit()
 
     def _validate_attrs(self) -> None:
         if self.limit is not None and not 0 < self.limit <= 300:
@@ -43,35 +38,14 @@ class ClientParams:
         if self.max_pages is not None:
             self.max_pages -= 1
 
-    def _set_max_rate_limit(self) -> None:
-        global MAX_CALLS_PER_SECOND
-        MAX_CALLS_PER_SECOND = 2  # per second
-        if self.api_key:
-            raise NotImplementedError("I don't know what the rate limit is for calls with an API key is yet.")
 
-@dataclass
 class BaseClient(ABC):
-    """
-    Parameters
-    ----------
-    client_params:
-        ClientParams instance.
-
-    rate_limiting: bool
-        If True, will throttle the amount of requests per second to the OpenSea API.
-        If you pass an API key into the client_params instance, the rate limiting will change accordingly.
-        If False, will not throttle.
-    """
-
     client_params: ClientParams
+    processed_pages: int = 0
+    response = None
+    parsed_http_response = None
     url = None
-    rate_limiting: bool = True
-
-    def __post_init__(self):
-        self.processed_pages: int = 0
-        self.response = None
-        self.parsed_http_response = None
-        self._http_response = None
+    _http_response = None
 
     @property
     def http_headers(self) -> dict:
@@ -80,21 +54,9 @@ class BaseClient(ABC):
             params['headers'] = {'X-API-Key': self.client_params.api_key}
         return params
 
-    @sleep_and_retry
-    @limits(calls=MAX_CALLS_PER_SECOND, period=RATE_LIMIT)
     def _get_request(self, **kwargs) -> Response:
-        """Get requests with a rate limiter."""
         updated_kwargs = kwargs | self.http_headers
         return request('GET', self.url, **updated_kwargs)
-
-    def parse_http_response(self, response_type: Type[BaseResponse], key: str)\
-            -> list[Union[Type[BaseResponse], BaseResponse]]:
-        if self._http_response:
-            the_json = self._http_response.json()
-            the_json = the_json[key] if isinstance(the_json, dict) else the_json  # the collections endpoint needs this
-            responses = [response_type(element) for element in the_json]
-            return responses
-        return list()
 
     def get_pages(self) -> Generator[list[list[BaseResponse]], None, None]:
         self.processed_pages = 0

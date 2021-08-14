@@ -4,6 +4,23 @@ from unittest import TestCase
 from open_sea_v1.endpoints.client import ClientParams
 from open_sea_v1.endpoints.events import EventsEndpoint, EventType
 
+class TestClientParams(TestCase):
+
+    def test_max_pages_attr_is_automatically_decremented_by_1(self):
+        params = ClientParams(max_pages=1)
+        self.assertEqual(params.max_pages, 0)
+
+    def test_max_pages_attr_raises_value_error_if_below_or_equal_to_zero(self):
+        self.assertRaises(ValueError, ClientParams, max_pages=-1)
+
+    def test_limit_attr_raises_value_error_if_not_between_0_and_300(self):
+        self.assertRaises(ValueError, ClientParams, limit=-1)
+        self.assertRaises(ValueError, ClientParams, limit=301)
+
+    def test_page_size_attr_raises_value_error_if_not_between_0_and_50(self):
+        self.assertRaises(ValueError, ClientParams, page_size=-1)
+        self.assertRaises(ValueError, ClientParams, page_size=51)
+
 
 class TestClientParams(TestCase):
 
