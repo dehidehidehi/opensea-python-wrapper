@@ -88,7 +88,7 @@ class AssetResponse(BaseResponse):
         self._set_optional_attrs()
 
     def _set_common_attrs(self):
-        self.token_id = self._json["token_id"]
+        self.token_id = str(self._json["token_id"])
         self.num_sales = self._json["num_sales"]
         self.background_color = self._json["background_color"]
         self.image_url = self._json["image_url"]
@@ -103,7 +103,7 @@ class AssetResponse(BaseResponse):
         self.permalink = self._json["permalink"]
         self.decimals = self._json["decimals"]
         self.token_metadata = self._json["token_metadata"]
-        self.id = self._json["id"]
+        self.id = str(self._json["id"])
 
     def _set_optional_attrs(self):
         """
