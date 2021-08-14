@@ -53,9 +53,9 @@ class AssetsEndpoint(BaseClient, BaseEndpoint):
     :return: Parsed JSON
     """
     client_params: ClientParams = None
-    asset_contract_address: Optional[list[str]] = None
-    asset_contract_addresses: Optional[str] = None
-    token_ids: Optional[list[str]] = None
+    asset_contract_address: Optional[str] = None
+    asset_contract_addresses: Optional[list[str]] = None
+    token_ids: Optional[list[int]] = None
     collection: Optional[str] = None
     owner: Optional[str] = None
     order_by: Optional[AssetsOrderBy] = None
