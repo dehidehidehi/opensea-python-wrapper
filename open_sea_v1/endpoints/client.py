@@ -1,3 +1,4 @@
+import logging
 from abc import ABC
 from dataclasses import dataclass
 from typing import Optional, Generator
@@ -5,6 +6,8 @@ from typing import Optional, Generator
 from requests import Response, request
 
 from open_sea_v1.responses.abc import BaseResponse
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class ClientParams:
@@ -16,8 +19,24 @@ class ClientParams:
     api_key: Optional[str] = None
 
     def __post_init__(self):
-        if self.limit is not None and not 0 < int(self.limit) <= 300:
-            raise ValueError(f'{self.limit=} max value is 300.')
+        self._validate_attrs()
+        self._decrement_max_pages_attr()
+
+    def _validate_attrs(self) -> None:
+        if self.limit is not None and not 0 < self.limit <= 300:
+            raise ValueError(f'{self.limit=} must be over 0 and lesser or equal to 300.')
+        if self.page_size is not None and not 0 <= self.page_size <= 50:
+            raise ValueError(f'{self.page_size=} must be between 0 and 50.')
+        if self.max_pages is not None and self.max_pages < 0:
+            raise ValueError(f'{self.max_pages=} must be greater than or equal to 0.')
+
+    def _decrement_max_pages_attr(self) -> None:
+        """
+        For OpenSea, the max pages attribute starts at zero.
+        However, and for clarity our package, will have this value start at 1 and decrement it for OpenSea.
+        """
+        if self.max_pages is not None:
+            self.max_pages -= 1
 
 
 class BaseClient(ABC):
@@ -41,12 +60,12 @@ class BaseClient(ABC):
 
     def get_pages(self) -> Generator[list[list[BaseResponse]], None, None]:
         self.processed_pages = 0
-        self.client_params.offset = 0
+        self.client_params.offset = 0 if self.client_params.offset is None else self.client_params.offset
         self._http_response = None
 
         while self.remaining_pages():
             self._http_response = self._get_request()
-            if self.parsed_http_response:  # edge case
+            if self.parsed_http_response is not None:  # edge case
                 self.processed_pages += 1
                 self.client_params.offset += self.client_params.page_size
                 yield self.parsed_http_response
