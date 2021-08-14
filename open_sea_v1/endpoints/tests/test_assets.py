@@ -72,7 +72,3 @@ class TestAssetsRequest(TestCase):
     def test_param_order_by_visitor_count(self):
         pass  # as far as I know this is not returned in the API http_response and done directly by OpenSea
 
-    def test_param_limit_cannot_be_below_0_or_above_50(self):
-        self.assertRaises(ValueError, AssetsEndpoint, **{**self.default_asset_params, **{'client_params': ClientParams(limit="25")}})
-        self.assertRaises(ValueError, AssetsEndpoint, **{**self.default_asset_params, **{'client_params': ClientParams(limit=-1)}})
-        self.assertRaises(ValueError, AssetsEndpoint, **{**self.default_asset_params, **{'client_params': ClientParams(limit=51)}})

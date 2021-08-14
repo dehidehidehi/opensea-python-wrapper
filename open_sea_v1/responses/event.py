@@ -36,7 +36,7 @@ class EventResponse(BaseResponse):
         self.ending_price = self._json['ending_price']
         self.event_type = self._json['event_type']
         self.from_account = self._json['from_account']
-        self.id = self._json['id']
+        self.id = str(self._json['id'])
         self.owner_account = self._json['owner_account']
         self.quantity = self._json['quantity']
         self.starting_price = self._json['starting_price']
