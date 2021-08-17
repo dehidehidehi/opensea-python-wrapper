@@ -22,7 +22,7 @@ class AssetsOrderBy(str, Enum):
 @dataclass
 class AssetsEndpoint(BaseClient, BaseEndpoint):
     """
-    Opensea API Assets Endpoint
+    Opensea API Assets Endpoint.
 
     Parameters
     ----------
