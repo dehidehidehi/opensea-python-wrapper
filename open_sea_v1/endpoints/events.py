@@ -36,7 +36,7 @@ class AuctionType(ExtendedStrEnum):
 @dataclass
 class EventsEndpoint(BaseClient, BaseEndpoint):
     """
-    Opensea API Events Endpoint
+    The events endpoint provides a list of events that occur on the assets that OpenSea tracks.
 
     Parameters
     ----------
