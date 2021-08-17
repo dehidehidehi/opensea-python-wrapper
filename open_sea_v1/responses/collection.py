@@ -78,6 +78,7 @@ class CollectionResponse(BaseResponse):
         self.instagram_username = self._json["instagram_username"]
         self.wiki_url = self._json["wiki_url"]
         self.name = self._json["name"]
+        self.owned_asset_count = self._json.get('owned_asset_count')
 
     @property
     def stats(self) -> Optional[_CollectionStats]:
