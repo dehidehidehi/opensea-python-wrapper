@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Generator
+from typing import Optional
 
 from open_sea_v1.endpoints.abc import BaseEndpoint
 from open_sea_v1.endpoints.client import BaseClient, ClientParams
@@ -12,11 +12,15 @@ class AssetsOrderBy(str, Enum):
     """
     Helper Enum for remembering the possible values for the order_by param of the AssetsEndpoint class.
     """
-    TOKEN_ID = "token_id"
     SALE_DATE = "sale_date"
     SALE_COUNT = "sale_count"
     VISITOR_COUNT = "visitor_count"
     SALE_PRICE = "sale_price"
+
+    @classmethod
+    def list(cls) -> list[str]:
+        """Returns list of values of each attribute of this String Enum."""
+        return list(map(lambda c: c.value, cls))
 
 
 @dataclass
@@ -70,9 +74,7 @@ class AssetsEndpoint(BaseClient, BaseEndpoint):
 
     @property
     def parsed_http_response(self) -> list[AssetResponse]:
-        assets_json = self._http_response.json()['assets']
-        assets = [AssetResponse(asset_json) for asset_json in assets_json]
-        return assets
+        return self.parse_http_response(AssetResponse, 'assets')
 
     def _get_request(self, **kwargs):
         params = dict(
@@ -129,7 +131,7 @@ class AssetsEndpoint(BaseClient, BaseEndpoint):
         if self.order_by is None:
             return
 
-        if self.order_by not in (AssetsOrderBy.TOKEN_ID, AssetsOrderBy.SALE_COUNT, AssetsOrderBy.SALE_DATE, AssetsOrderBy.SALE_PRICE, AssetsOrderBy.VISITOR_COUNT):
+        if self.order_by not in AssetsOrderBy.list():
             raise ValueError(
                 f"order_by param value ({self.order_by}) is invalid. "
                 f"Must be a value from {AssetsOrderBy.list()}, case sensitive."

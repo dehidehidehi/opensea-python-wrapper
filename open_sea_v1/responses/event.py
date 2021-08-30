@@ -1,10 +1,11 @@
+import locale
 from dataclasses import dataclass
 
 from open_sea_v1.helpers.ether_converter import EtherConverter, EtherUnit
-from open_sea_v1.responses.asset import AssetResponse
 from open_sea_v1.responses.abc import BaseResponse
+from open_sea_v1.responses.asset import AssetResponse
 
-import locale
+
 @dataclass
 class EventResponse(BaseResponse):
     _json: dict
@@ -43,6 +44,7 @@ class EventResponse(BaseResponse):
         self.to_account = self._json['to_account']
         self.total_price = self._json['total_price']
         self.bid_amount = self._json['bid_amount']
+        self.is_private = self._json.get('is_private')
 
     @property
     def eth_price(self):
