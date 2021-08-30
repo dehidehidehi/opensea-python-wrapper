@@ -1,6 +1,7 @@
-from open_sea_v1.endpoints.events import EventsEndpoint, EventType
 from open_sea_v1.endpoints.abc import ClientParams
+from open_sea_v1.endpoints.events import EventsEndpoint, EventType
 from open_sea_v1.responses.tests._response_helpers import ResponseTestHelper
+
 
 class TestEventsObj(ResponseTestHelper):
     events_default_kwargs = dict(

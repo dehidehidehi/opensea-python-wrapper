@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Generator
+from typing import Optional
 
 from open_sea_v1.endpoints.abc import BaseEndpoint
 from open_sea_v1.endpoints.client import BaseClient, ClientParams

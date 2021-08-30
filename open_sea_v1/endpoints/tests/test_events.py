@@ -1,8 +1,8 @@
-from unittest import TestCase
 from datetime import datetime, timedelta
+from unittest import TestCase
 
-from open_sea_v1.endpoints.events import EventsEndpoint, EventType, AuctionType
 from open_sea_v1.endpoints.client import ClientParams
+from open_sea_v1.endpoints.events import EventsEndpoint, EventType, AuctionType
 
 
 class TestEventsEndpoint(TestCase):

@@ -1,7 +1,7 @@
 from enum import Enum
 
 OPENSEA_API_V1 = "https://api.opensea.io/api/v1/"
-OPENSEA_LISTINGS_V1 = "https://api.opensea.io/wyvern/v1/"
+OPENSEA_ORDER_BOOK_V1 = "https://api.opensea.io/wyvern/v1/"
 
 
 class EndpointURLS(str, Enum):
@@ -11,4 +11,4 @@ class EndpointURLS(str, Enum):
     BUNDLES = OPENSEA_API_V1 + "bundles"
     EVENTS = OPENSEA_API_V1 + "events"
     COLLECTIONS = OPENSEA_API_V1 + "collections"
-    LISTINGS = OPENSEA_LISTINGS_V1 + "orders"
+    ORDERS = OPENSEA_ORDER_BOOK_V1 + "orders"

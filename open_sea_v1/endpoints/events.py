@@ -4,8 +4,8 @@ from typing import Optional
 
 from requests import Response
 
-from open_sea_v1.endpoints.client import BaseClient, ClientParams
 from open_sea_v1.endpoints.abc import BaseEndpoint
+from open_sea_v1.endpoints.client import BaseClient, ClientParams
 from open_sea_v1.endpoints.urls import EndpointURLS
 from open_sea_v1.helpers.extended_classes import ExtendedStrEnum
 from open_sea_v1.responses.event import EventResponse
