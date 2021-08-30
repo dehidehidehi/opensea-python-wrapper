@@ -3,6 +3,9 @@ from unittest import TestCase
 
 from open_sea_v1.endpoints.client import ClientParams
 from open_sea_v1.endpoints.events import EventsEndpoint, EventType
+from open_sea_v1.responses.event import EventResponse
+
+
 
 class TestClientParams(TestCase):
 
@@ -22,6 +25,95 @@ class TestClientParams(TestCase):
         self.assertRaises(ValueError, ClientParams, page_size=51)
 
 
+class TestClientParams(TestCase):
+
+    def test_max_pages_attr_is_automatically_decremented_by_1(self):
+        params = ClientParams(max_pages=1)
+        self.assertEqual(params.max_pages, 0)
+
+    def test_max_pages_attr_raises_value_error_if_below_or_equal_to_zero(self):
+        self.assertRaises(ValueError, ClientParams, max_pages=-1)
+
+    def test_limit_attr_raises_value_error_if_not_between_0_and_300(self):
+        self.assertRaises(ValueError, ClientParams, limit=-1)
+        self.assertRaises(ValueError, ClientParams, limit=301)
+
+    def test_page_size_attr_raises_value_error_if_not_between_0_and_50(self):
+        self.assertRaises(ValueError, ClientParams, page_size=-1)
+        self.assertRaises(ValueError, ClientParams, page_size=51)
+
+
+
+
+class TestClientParams(TestCase):
+
+    def test_max_pages_attr_is_automatically_decremented_by_1(self):
+        params = ClientParams(max_pages=1)
+        self.assertEqual(params.max_pages, 0)
+
+    def test_max_pages_attr_raises_value_error_if_below_or_equal_to_zero(self):
+        self.assertRaises(ValueError, ClientParams, max_pages=-1)
+
+    def test_limit_attr_raises_value_error_if_not_between_0_and_300(self):
+        self.assertRaises(ValueError, ClientParams, limit=-1)
+        self.assertRaises(ValueError, ClientParams, limit=301)
+
+    def test_page_size_attr_raises_value_error_if_not_between_0_and_50(self):
+        self.assertRaises(ValueError, ClientParams, page_size=-1)
+        self.assertRaises(ValueError, ClientParams, page_size=51)
+
+
+class TestClientParams(TestCase):
+
+    def test_max_pages_attr_is_automatically_decremented_by_1(self):
+        params = ClientParams(max_pages=1)
+        self.assertEqual(params.max_pages, 0)
+
+    def test_max_pages_attr_raises_value_error_if_below_or_equal_to_zero(self):
+        self.assertRaises(ValueError, ClientParams, max_pages=-1)
+
+    def test_limit_attr_raises_value_error_if_not_between_0_and_300(self):
+        self.assertRaises(ValueError, ClientParams, limit=-1)
+        self.assertRaises(ValueError, ClientParams, limit=301)
+
+    def test_page_size_attr_raises_value_error_if_not_between_0_and_50(self):
+        self.assertRaises(ValueError, ClientParams, page_size=-1)
+        self.assertRaises(ValueError, ClientParams, page_size=51)
+
+
+class TestClientParams(TestCase):
+
+    def test_max_pages_attr_is_automatically_decremented_by_1(self):
+        params = ClientParams(max_pages=1)
+        self.assertEqual(params.max_pages, 0)
+
+    def test_max_pages_attr_raises_value_error_if_below_or_equal_to_zero(self):
+        self.assertRaises(ValueError, ClientParams, max_pages=-1)
+
+    def test_limit_attr_raises_value_error_if_not_between_0_and_300(self):
+        self.assertRaises(ValueError, ClientParams, limit=-1)
+        self.assertRaises(ValueError, ClientParams, limit=301)
+
+    def test_page_size_attr_raises_value_error_if_not_between_0_and_50(self):
+        self.assertRaises(ValueError, ClientParams, page_size=-1)
+        self.assertRaises(ValueError, ClientParams, page_size=51)
+
+
+class TestClientParams(TestCase):
+
+    def test_max_pages_attr_raises_value_error_if_below_or_equal_to_zero(self):
+        self.assertRaises(ValueError, ClientParams, max_pages=-1)
+        self.assertRaises(ValueError, ClientParams, max_pages=0)
+
+    def test_limit_attr_raises_value_error_if_not_between_0_and_300(self):
+        self.assertRaises(ValueError, ClientParams, limit=-1)
+        self.assertRaises(ValueError, ClientParams, limit=301)
+
+    def test_page_size_attr_raises_value_error_if_not_between_0_and_50(self):
+        self.assertRaises(ValueError, ClientParams, page_size=-1)
+        self.assertRaises(ValueError, ClientParams, page_size=51)
+
+
 class TestBaseEndpointClient(TestCase):
 
     @classmethod
@@ -29,7 +121,7 @@ class TestBaseEndpointClient(TestCase):
         cls.max_pages = 2
         cls.limit = 5
         cls.sample_client_kwargs = dict(
-            client_params=ClientParams(max_pages=cls.max_pages, limit=cls.limit),
+            client_params=ClientParams(max_pages=cls.max_pages, limit=cls.limit, page_size=cls.limit),
             asset_contract_address="0x76be3b62873462d2142405439777e971754e8e77",
             token_id=str(10152),
             event_type=EventType.SUCCESSFUL,
@@ -63,21 +155,19 @@ class TestBaseEndpointClient(TestCase):
             self.assertEqual(self.limit, len(page))
 
     def test_pagination_does_not_return_duplicates_between_different_pages(self):
-
-        def get_event_ids(offset) -> list[str]:
-            self.sample_client.client_params = ClientParams(limit=5, offset=offset, max_pages=1)
-            return [event.id for event in chain.from_iterable(self.sample_client.get_pages())]
-
-        pages = [get_event_ids(offset) for offset in range(0, 14, 5)]
-        pages = list(chain.from_iterable(pages))
-        total_events = len(pages)
-        total_unique_events = len(set(pages))
-        self.assertEqual(total_events, total_unique_events)
+        limit = 2
+        max_pages = 2
+        self.sample_client.client_params = ClientParams(limit=limit, page_size=limit, max_pages=max_pages)
+        events_resps: list[EventResponse] = list(chain.from_iterable(self.sample_client.get_pages()))
+        unique_ids = set(e.id for e in events_resps)
+        self.assertEqual(len(unique_ids), (limit+1) * max_pages)
 
     def test_pagination_pages_are_in_perfect_sequence(self):
         """Making sure we are not skipping things between pages by mistake."""
-        self.sample_client.client_params = ClientParams(limit=2, offset=0, max_pages=1)
-        short_page_event_ids = [e.id for e in list(self.sample_client.get_pages())[0]]
-        self.sample_client.client_params = ClientParams(limit=3, offset=1, max_pages=1)
-        longer_page_event_ids = [e.id for e in list(self.sample_client.get_pages())[0]]
-        self.assertEqual(short_page_event_ids[-1], longer_page_event_ids[0])
+        self.sample_client.client_params = ClientParams(limit=1, offset=0, page_size=1, max_pages=2)
+        resp_1_ids = [e.id for e in chain.from_iterable(self.sample_client.get_pages())]
+        self.sample_client.client_params = ClientParams(limit=1, offset=1, page_size=1, max_pages=1)
+        resp_2_ids = [e.id for e in chain.from_iterable(self.sample_client.get_pages())]
+        # print(resp_1_ids)
+        # print(resp_2_ids)
+        self.assertEqual(resp_1_ids[-1], resp_2_ids[-1])

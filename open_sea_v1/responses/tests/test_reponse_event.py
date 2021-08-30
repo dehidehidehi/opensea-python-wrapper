@@ -1,10 +1,11 @@
-from open_sea_v1.endpoints.events import EventsEndpoint, EventType
 from open_sea_v1.endpoints.abc import ClientParams
+from open_sea_v1.endpoints.events import EventsEndpoint, EventType
 from open_sea_v1.responses.tests._response_helpers import ResponseTestHelper
+
 
 class TestEventsObj(ResponseTestHelper):
     events_default_kwargs = dict(
-        client_params=ClientParams(limit=1),
+        client_params=ClientParams(limit=1, page_size=1),
         asset_contract_address="0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",  # punk
         only_opensea=False,
         event_type=EventType.SUCCESSFUL,

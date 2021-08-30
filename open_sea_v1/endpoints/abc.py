@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Union, Generator
+from typing import Union, Generator
 
 from requests import Response
 

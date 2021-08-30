@@ -4,7 +4,7 @@ from unittest import TestLoader, TextTestRunner
 def discover_and_run_tests() -> None:
     loader = TestLoader()
     tests = loader.discover('..', pattern='test_*')
-    test_runner = TextTestRunner()
+    test_runner = TextTestRunner(verbosity=1)
     test_runner.run(tests)
 
 

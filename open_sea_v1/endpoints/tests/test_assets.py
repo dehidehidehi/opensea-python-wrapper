@@ -8,7 +8,7 @@ from open_sea_v1.responses.asset import AssetResponse
 class TestAssetsRequest(TestCase):
     sample_contract = "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb"  # punk
     sample_wallet = "0x5ca12f79e4d33b0bd153b40df59f6db9ee03482e"  # punk
-    default_client_params = ClientParams(limit=5)
+    default_client_params = ClientParams(limit=5, page_size=5)
     default_asset_params = dict(
         client_params=default_client_params, token_ids=[5, 6, 7], asset_contract_address=sample_contract,
     )
@@ -48,11 +48,6 @@ class TestAssetsRequest(TestCase):
         for invalid_order in invalid_order_values:
             params = dict(token_ids=[1], asset_contract_address=self.sample_contract, order_direction=invalid_order)
             self.assertRaises((ValueError, TypeError), AssetsEndpoint, **params)
-
-    def test_param_order_by_token_id(self):
-        params = self.default_asset_params | dict(token_ids=[3, 2, 1], order_by=AssetsOrderBy.TOKEN_ID, order_direction='desc')
-        punks_ids = [punk.token_id for punk in self.create_and_get(**params)]
-        self.assertEqual(['3', '2', '1'], punks_ids)
 
     def test_param_order_by_sale_date(self):
         params = self.default_asset_params | dict(token_ids=[1, 14, 33], order_by=AssetsOrderBy.SALE_DATE)

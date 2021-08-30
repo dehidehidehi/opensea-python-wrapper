@@ -4,8 +4,8 @@ from typing import Optional
 
 from requests import Response
 
-from open_sea_v1.endpoints.client import BaseClient, ClientParams
 from open_sea_v1.endpoints.abc import BaseEndpoint
+from open_sea_v1.endpoints.client import BaseClient, ClientParams
 from open_sea_v1.endpoints.urls import EndpointURLS
 from open_sea_v1.helpers.extended_classes import ExtendedStrEnum
 from open_sea_v1.responses.event import EventResponse
@@ -79,6 +79,8 @@ class EventsEndpoint(BaseClient, BaseEndpoint):
 
     def __post_init__(self):
         self._validate_request_params()
+        if not self.client_params:
+            raise AttributeError('Attribute client_params is missing.')
 
     @property
     def url(self) -> str:
@@ -104,9 +106,7 @@ class EventsEndpoint(BaseClient, BaseEndpoint):
 
     @property
     def parsed_http_response(self) -> list[EventResponse]:
-        events_json = self._http_response.json()['asset_events']
-        events = [EventResponse(event) for event in events_json]
-        return events
+        return self.parse_http_response(EventResponse, 'asset_events')
 
     def _validate_request_params(self) -> None:
         self._validate_param_auction_type()

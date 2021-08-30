@@ -10,7 +10,7 @@ class TestCollectionsEndpoint(TestCase):
     def setUp(self) -> None:
         self.asset_owner = "0x5ca12f79e4d33b0bd153b40df59f6db9ee03482e"  # punk
         self.endpoint_kwargs = dict(
-            client_params=ClientParams(limit=2, max_pages=1),
+            client_params=ClientParams(limit=2, max_pages=1, page_size=2),
         )
 
     @staticmethod

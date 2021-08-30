@@ -18,8 +18,8 @@ class CollectionsEndpoint(BaseClient, BaseEndpoint):
     Maintainer observations:
     ----------
     You cannot specify the collection name for the data you wish to retrieve.
-    The only way to retrieve such data, is by getting ALL collections from OpenSea, then
-    iterating over them.
+    In that situation, it is better to make a call to the Assets or Asset endpoint,
+    and extract the information from the collection field.
 
 
     Parameters
@@ -41,6 +41,8 @@ class CollectionsEndpoint(BaseClient, BaseEndpoint):
 
     def __post_init__(self):
         self._validate_request_params()
+        if not self.client_params:
+            raise AttributeError('Attribute client_params is missing.')
 
     @property
     def url(self):
