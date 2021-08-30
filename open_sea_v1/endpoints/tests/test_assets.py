@@ -49,11 +49,6 @@ class TestAssetsRequest(TestCase):
             params = dict(token_ids=[1], asset_contract_address=self.sample_contract, order_direction=invalid_order)
             self.assertRaises((ValueError, TypeError), AssetsEndpoint, **params)
 
-    def test_param_order_by_token_id(self):
-        params = self.default_asset_params | dict(token_ids=[3, 2, 1], order_by=AssetsOrderBy.TOKEN_ID, order_direction='desc')
-        punks_ids = [punk.token_id for punk in self.create_and_get(**params)]
-        self.assertEqual(['3', '2', '1'], punks_ids)
-
     def test_param_order_by_sale_date(self):
         params = self.default_asset_params | dict(token_ids=[1, 14, 33], order_by=AssetsOrderBy.SALE_DATE)
         punks_sales = [punk.last_sale.event_timestamp for punk in self.create_and_get(**params)]
