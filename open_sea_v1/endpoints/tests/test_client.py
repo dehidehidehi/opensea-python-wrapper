@@ -4,6 +4,7 @@ from unittest import TestCase
 from open_sea_v1.endpoints.client import ClientParams
 from open_sea_v1.endpoints.events import EventsEndpoint, EventType
 
+
 class TestClientParams(TestCase):
 
     def test_max_pages_attr_is_automatically_decremented_by_1(self):
