@@ -74,9 +74,7 @@ class AssetsEndpoint(BaseClient, BaseEndpoint):
 
     @property
     def parsed_http_response(self) -> list[AssetResponse]:
-        assets_json = self._http_response.json()['assets']
-        assets = [AssetResponse(asset_json) for asset_json in assets_json]
-        return assets
+        return self.parse_http_response(AssetResponse, 'assets')
 
     def _get_request(self, **kwargs):
         params = dict(
