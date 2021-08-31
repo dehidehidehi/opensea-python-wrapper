@@ -50,10 +50,7 @@ class CollectionsEndpoint(BaseClient, BaseEndpoint):
 
     @property
     def parsed_http_response(self) -> list[CollectionResponse]:
-        resp_json = self._http_response.json()
-        collections_json = resp_json if isinstance(resp_json, list) else resp_json['collections']
-        collections = [CollectionResponse(collection_json) for collection_json in collections_json]
-        return collections
+        return self.parse_http_response(CollectionResponse, 'collections')
 
     def _get_request(self, **kwargs):
         params = dict(

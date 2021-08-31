@@ -1,7 +1,7 @@
 import logging
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, Generator, Union
+from typing import Optional, Generator, Union, Type
 
 from ratelimit import limits, sleep_and_retry
 from requests import Response, request
@@ -49,16 +49,38 @@ class ClientParams:
         if self.api_key:
             raise NotImplementedError("I don't know what the rate limit is for calls with an API key is yet.")
 
-
+@dataclass
 class BaseClient(ABC):
+    """
+    Parameters
+    ----------
+    client_params:
+        ClientParams instance.
+
+    rate_limiting: bool
+        If True, will throttle the amount of requests per second to the OpenSea API.
+        If you pass an API key into the client_params instance, the rate limiting will change accordingly.
+        If False, will not throttle.
+
+    retry: bool
+        OpenSea will occasionally return an empty response object, although the same query would yield
+        a full response object afterwards.
+        If True, will pause the request for one second before trying again once.
+        If it fails again, the empty response is returned.
+        If set to False, the client always returns the first response object, even if it is empty.
+
+    """
+
     client_params: ClientParams
-    processed_pages: int = 0
-    response = None
-    parsed_http_response = None
     url = None
     rate_limiting: bool = True
-    _http_response = None
-    _rate_limiting_timer: float = 0.0
+    retry: bool = True
+
+    def __post_init__(self):
+        self.processed_pages: int = 0
+        self.response = None
+        self.parsed_http_response = None
+        self._http_response = None
 
     @property
     def http_headers(self) -> dict:
@@ -73,6 +95,15 @@ class BaseClient(ABC):
         """Get requests with a rate limiter."""
         updated_kwargs = kwargs | self.http_headers
         return request('GET', self.url, **updated_kwargs)
+
+    def parse_http_response(self, response_type: Type[BaseResponse], key: str)\
+            -> list[Union[Type[BaseResponse], BaseResponse]]:
+        if self._http_response:
+            the_json = self._http_response.json()
+            the_json = the_json[key] if isinstance(the_json, dict) else the_json  # the collections endpoint needs this
+            responses = [response_type(element) for element in the_json]
+            return responses
+        return list()
 
     def get_pages(self) -> Generator[list[list[BaseResponse]], None, None]:
         self.processed_pages = 0
