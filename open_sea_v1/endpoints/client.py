@@ -1,13 +1,17 @@
 import logging
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, Generator
+from typing import Optional, Generator, Union
 
+from ratelimit import limits, sleep_and_retry
 from requests import Response, request
 
 from open_sea_v1.responses.abc import BaseResponse
 
 logger = logging.getLogger(__name__)
+
+MAX_CALLS_PER_SECOND = 2  # gets overriden if API key is passed to ClientParams instance
+RATE_LIMIT = 1  # second
 
 @dataclass
 class ClientParams:
@@ -21,6 +25,7 @@ class ClientParams:
     def __post_init__(self):
         self._validate_attrs()
         self._decrement_max_pages_attr()
+        self._set_max_rate_limit()
 
     def _validate_attrs(self) -> None:
         if self.limit is not None and not 0 < self.limit <= 300:
@@ -38,6 +43,12 @@ class ClientParams:
         if self.max_pages is not None:
             self.max_pages -= 1
 
+    def _set_max_rate_limit(self) -> None:
+        global MAX_CALLS_PER_SECOND
+        MAX_CALLS_PER_SECOND = 2  # per second
+        if self.api_key:
+            raise NotImplementedError("I don't know what the rate limit is for calls with an API key is yet.")
+
 
 class BaseClient(ABC):
     client_params: ClientParams
@@ -45,7 +56,9 @@ class BaseClient(ABC):
     response = None
     parsed_http_response = None
     url = None
+    rate_limiting: bool = True
     _http_response = None
+    _rate_limiting_timer: float = 0.0
 
     @property
     def http_headers(self) -> dict:
@@ -54,7 +67,10 @@ class BaseClient(ABC):
             params['headers'] = {'X-API-Key': self.client_params.api_key}
         return params
 
+    @sleep_and_retry
+    @limits(calls=MAX_CALLS_PER_SECOND, period=RATE_LIMIT)
     def _get_request(self, **kwargs) -> Response:
+        """Get requests with a rate limiter."""
         updated_kwargs = kwargs | self.http_headers
         return request('GET', self.url, **updated_kwargs)
 
