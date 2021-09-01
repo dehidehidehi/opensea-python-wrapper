@@ -36,6 +36,10 @@ class TestOrdersEndpoint(TestCase):
         self.endpoint_kwargs |= dict(asset_contract_address=self.asset_contract_address, token_ids=list(range(1, 32)))
         self.assertRaises(ValueError, OrdersEndpoint, **self.endpoint_kwargs)
 
+    def test_attr_token_ids_raises_if_len_is_above_30(self):
+        self.endpoint_kwargs |= dict(asset_contract_address=self.asset_contract_address, token_ids=list(range(1, 32)))
+        self.assertRaises(ValueError, OrdersEndpoint, **self.endpoint_kwargs)
+
     def test_attr_token_ids_raises_if_not_defined_together_with_asset_contract_address(self):
         self.endpoint_kwargs |= dict(token_ids=[1, 2])
         self.assertRaises(AttributeError, OrdersEndpoint, **self.endpoint_kwargs)
