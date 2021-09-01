@@ -49,6 +49,7 @@ class ClientParams:
         if self.api_key:
             raise NotImplementedError("I don't know what the rate limit is for calls with an API key is yet.")
 
+
 @dataclass
 class BaseClient(ABC):
     """
@@ -61,20 +62,11 @@ class BaseClient(ABC):
         If True, will throttle the amount of requests per second to the OpenSea API.
         If you pass an API key into the client_params instance, the rate limiting will change accordingly.
         If False, will not throttle.
-
-    retry: bool
-        OpenSea will occasionally return an empty response object, although the same query would yield
-        a full response object afterwards.
-        If True, will pause the request for one second before trying again once.
-        If it fails again, the empty response is returned.
-        If set to False, the client always returns the first response object, even if it is empty.
-
     """
 
     client_params: ClientParams
     url = None
     rate_limiting: bool = True
-    retry: bool = True
 
     def __post_init__(self):
         self.processed_pages: int = 0
