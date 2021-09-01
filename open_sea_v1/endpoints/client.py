@@ -49,6 +49,7 @@ class ClientParams:
         if self.api_key:
             raise NotImplementedError("I don't know what the rate limit is for calls with an API key is yet.")
 
+
 @dataclass
 class BaseClient(ABC):
     """
@@ -112,10 +113,16 @@ class BaseClient(ABC):
 
         while self.remaining_pages():
             self._http_response = self._get_request()
+            self.check_if_response_is_valid()
             if self.parsed_http_response is not None:  # edge case
                 self.processed_pages += 1
                 self.client_params.offset += self.client_params.page_size
                 yield self.parsed_http_response
+
+    def check_if_response_is_valid(self):
+        if not self._http_response.ok:
+            logger.warning(f'Page {self.processed_pages} returned a {self._http_response.status_code} status code: {self._http_response.reason}\n'
+                           f'{self._http_response.text}')
 
     def remaining_pages(self) -> bool:
         if self._http_response is None:
