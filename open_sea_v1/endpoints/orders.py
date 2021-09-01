@@ -119,11 +119,7 @@ class OrdersEndpoint(BaseClient, BaseEndpoint):
 
     @property
     def parsed_http_response(self) -> list[OrderResponse]:
-        if self._http_response:
-            orders_jsons = self._http_response.json()['orders']
-            orders = [OrderResponse(order_json) for order_json in orders_jsons]
-            return orders
-        return list()
+        return self.parse_http_response(OrderResponse, 'orders')
 
     def _get_request(self, **kwargs):
         params = dict(
@@ -160,6 +156,7 @@ class OrdersEndpoint(BaseClient, BaseEndpoint):
         self._validate_contract_address_defined_with_token_id_or_tokens_ids()
         self._validate_token_id_defined_with_contract_address()
         self._validate_token_ids_defined_with_contract_address()
+        self._validate_token_ids_quantity_is_lower_or_equal_to_30()
         self._validate_token_id_and_token_ids_cannot_be_defined_together()
         self._validate_listed_after_and_listed_before_are_datetimes()
         self._validate_order_by_eth_price_is_defined_with_asset_contract_address_and_token_id_or_token_ids()
@@ -179,6 +176,10 @@ class OrdersEndpoint(BaseClient, BaseEndpoint):
             return
         if not self.asset_contract_address:
             raise AttributeError('Attribute token_id must be defined together with asset_contract_address')
+
+    def _validate_token_ids_quantity_is_lower_or_equal_to_30(self):
+        if self.token_ids and len(self.token_ids) > 30:
+            raise ValueError('Attribute token_ids length must be equal or below 30.')
 
     def _validate_token_ids_defined_with_contract_address(self) -> None:
         if self.token_ids is None:

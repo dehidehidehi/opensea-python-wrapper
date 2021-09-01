@@ -49,6 +49,7 @@ class ClientParams:
         if self.api_key:
             raise NotImplementedError("I don't know what the rate limit is for calls with an API key is yet.")
 
+
 @dataclass
 class BaseClient(ABC):
     """
@@ -61,11 +62,20 @@ class BaseClient(ABC):
         If True, will throttle the amount of requests per second to the OpenSea API.
         If you pass an API key into the client_params instance, the rate limiting will change accordingly.
         If False, will not throttle.
+
+    retry: bool
+        OpenSea will occasionally return an empty response object, although the same query would yield
+        a full response object afterwards.
+        If True, will pause the request for one second before trying again once.
+        If it fails again, the empty response is returned.
+        If set to False, the client always returns the first response object, even if it is empty.
+
     """
 
     client_params: ClientParams
     url = None
     rate_limiting: bool = True
+    retry: bool = True
 
     def __post_init__(self):
         self.processed_pages: int = 0
@@ -103,10 +113,16 @@ class BaseClient(ABC):
 
         while self.remaining_pages():
             self._http_response = self._get_request()
+            self.check_if_response_is_valid()
             if self.parsed_http_response is not None:  # edge case
                 self.processed_pages += 1
                 self.client_params.offset += self.client_params.page_size
                 yield self.parsed_http_response
+
+    def check_if_response_is_valid(self):
+        if not self._http_response.ok:
+            logger.warning(f'Page {self.processed_pages} returned a {self._http_response.status_code} status code: {self._http_response.reason}\n'
+                           f'{self._http_response.text}')
 
     def remaining_pages(self) -> bool:
         if self._http_response is None:
