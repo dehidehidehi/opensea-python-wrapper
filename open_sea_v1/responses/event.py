@@ -1,9 +1,12 @@
 import locale
+import logging
 from dataclasses import dataclass
 
 from open_sea_v1.helpers.ether_converter import EtherConverter, EtherUnit
 from open_sea_v1.responses.abc import BaseResponse
 from open_sea_v1.responses.asset import AssetResponse
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -14,14 +17,15 @@ class EventResponse(BaseResponse):
         locale.setlocale(locale.LC_ALL, '')  # big number str formater
 
         name = self.asset.name[:20]
-        transaction_date = f"{self.transaction['timestamp'][:10]} {self.transaction['timestamp'][11:-3]}"
+        transaction_date = f"{self.transaction['timestamp'][:10]} {self.transaction['timestamp'][11:-3]}" if self.transaction else ''
+
         usd_price = round(self.usd_price / int(self.quantity), 2)
         usd_price = f"{usd_price:,.2f}"
         usd_price = f"{usd_price} USD"
         eth_price = self.eth_price / int(self.quantity)
         eth_price = f"{eth_price:.4f} ETH"  # trailing zeros
 
-        str_representation ="    ".join([name, transaction_date, usd_price, eth_price])
+        str_representation = "    ".join([name, transaction_date, usd_price, eth_price])
         return str_representation
 
     def __post_init__(self):
@@ -47,12 +51,18 @@ class EventResponse(BaseResponse):
         self.is_private = self._json.get('is_private')
 
     @property
-    def eth_price(self):
+    def eth_price(self) -> float:
+        if not self.total_price:
+            logger.debug(f'Event {self.id} for asset {self.asset.name} ({self.asset.id}) has no ETH price. Returning 0.')
+            return 0.0
         eth_price = EtherConverter(quantity=self.total_price, unit=EtherUnit.WEI).ether
         return eth_price
 
     @property
     def usd_price(self):
+        if not self.payment_token:
+            logger.debug(f'Event {self.id} for asset {self.asset.name} ({self.asset.id}) has no payment token. Returning 0.')
+            return 0.0
         eth_to_usd_price = float(self.payment_token['usd_price'])  # 'eth_price' key also available
         usd_price = round(self.eth_price * eth_to_usd_price, 2)
         return usd_price
@@ -76,4 +86,3 @@ class EventResponse(BaseResponse):
     @property
     def winner_account(self) -> dict:
         return self._json['winner_account']
-

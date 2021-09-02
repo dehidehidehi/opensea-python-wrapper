@@ -14,7 +14,7 @@ class OrderResponse(BaseResponse):
     _json: dict
 
     def __str__(self):
-        return f"order_id={self.id}     {str(self.asset)}"
+        return f"order_id={self.id}"
 
     def __post_init__(self):
         self._set_common_attrs()
