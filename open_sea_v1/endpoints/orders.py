@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+from ratelimit import sleep_and_retry, limits
+
 from open_sea_v1.endpoints.abc import BaseEndpoint
-from open_sea_v1.endpoints.client import BaseClient, ClientParams
+from open_sea_v1.endpoints.client import BaseClient, ClientParams, MAX_CALLS_PER_SECOND, RATE_LIMIT
 from open_sea_v1.endpoints.urls import EndpointURLS
 from open_sea_v1.responses.order import OrderResponse
 
@@ -73,12 +75,6 @@ class OrdersEndpoint(BaseClient, BaseEndpoint):
         0 for fixed-price sales or min-bid auctions, and 1 for declining-price Dutch Auctions.
         NOTE=use only_english=true for filtering for only English Auctions
 
-    limit: int
-        Number of orders to return (capped at 50).
-
-    offset: int
-        Number of orders to offset by (for pagination)
-
     order_by: str
         How to sort the orders. Can be created_date for when they were made,
         or eth_price to see the lowest-priced orders first (converted to their ETH values).
@@ -124,7 +120,10 @@ class OrdersEndpoint(BaseClient, BaseEndpoint):
         orders = [OrderResponse(order_json) for order_json in orders_jsons]
         return orders
 
+    @sleep_and_retry
+    @limits(calls=.25, period=RATE_LIMIT)
     def _get_request(self, **kwargs):
+        """Added slower rate limiing"""
         params = dict(
             asset_contract_address=self.asset_contract_address,
             payment_token_address=self.payment_token_address,
