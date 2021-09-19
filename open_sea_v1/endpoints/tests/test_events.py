@@ -38,11 +38,11 @@ class TestEventsEndpoint(TestCase):
         self.assertRaises((ValueError, TypeError), self.create_and_get, **updated_kwargs)
 
     def test_param_auction_type_raises_if_not_isinstance_of_str(self):
-        updated_kwargs = self.events_default_kwargs | dict(auction_type=0.0)
+        updated_kwargs = self.events_default_kwargs | dict(auction_type=0.0)  # type: ignore
         self.assertRaises((ValueError, TypeError), self.create_and_get, **updated_kwargs)
 
     def test_param_auction_type_does_not_raise_if_is_none(self):
-        updated_kwargs = self.events_default_kwargs | dict(auction_type=None)
+        updated_kwargs = self.events_default_kwargs | dict(auction_type=None)  # type: ignore
         self.create_and_get(**updated_kwargs)
 
     def test_param_only_opensea_true_filters_properly(self):
@@ -55,30 +55,30 @@ class TestEventsEndpoint(TestCase):
         """
         Have no idea how to test this param.
         """
-        # updated_kwargs = self.events_default_kwargs | dict(only_opensea=False, offset=1, limit=100)
+        # updated_kwargs = self.events_kwargs | dict(only_opensea=False, offset=1, limit=100)
         # events = self.create_and_get(**updated_kwargs)
         # self.assertTrue(any('opensea.io' not in event.asset.permalink for event in events))
         pass
 
     def test_param_occurred_before_raises_exception_if_not_datetime_instances(self):
-        updated_kwargs = self.events_default_kwargs | dict(occurred_before=True)
+        updated_kwargs = self.events_default_kwargs | dict(occurred_before=True)  # type: ignore
         self.assertRaises(TypeError, self.create_and_get, **updated_kwargs)
 
     def test_param_occurred_before_and_after_raises_exception_if_are_equal_values(self):
         dt_now = datetime.now()
         occurred_params = dict(occurred_before=dt_now, occurred_after=dt_now)
-        updated_kwargs = self.events_default_kwargs | occurred_params
+        updated_kwargs = self.events_default_kwargs | occurred_params  # type: ignore
         self.assertRaises(ValueError, self.create_and_get, **updated_kwargs)
 
     def test_param_occurred_before_and_after_does_not_raise_if_both_are_none(self):
-        updated_kwargs = self.events_default_kwargs | dict(occurred_before=None, occurred_after=None)
+        updated_kwargs = self.events_default_kwargs | dict(occurred_before=None, occurred_after=None)  # type: ignore
         self.create_and_get(**updated_kwargs)
 
     def test_param_occurred_after_cannot_be_higher_than_occurred_before(self):
         occurred_before = datetime.now()
         occurred_after = occurred_before + timedelta(microseconds=1)
         occurred_params = dict(occurred_before=occurred_before, occurred_after=occurred_after)
-        updated_kwargs = self.events_default_kwargs | occurred_params
+        updated_kwargs = self.events_default_kwargs | occurred_params  # type: ignore
         self.assertRaises(ValueError, self.create_and_get, **updated_kwargs)
 
     def test_param_occurred_after_filters_properly(self):

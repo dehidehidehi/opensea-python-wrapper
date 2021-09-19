@@ -35,7 +35,7 @@ class TestAssetsRequest(TestCase):
         self.assertRaises(ValueError, AssetsEndpoint, token_ids=[1, 2, 3])
 
     def test_params_cannot_be_simultaneously_be_passed_asset_contract_address_and_contract_addresses(self):
-        params = self.default_asset_params | dict(asset_contract_address=True, asset_contract_addresses=True)
+        params = self.default_asset_params | dict(asset_contract_address=True, asset_contract_addresses=True)  # type: ignore
         self.assertRaises(ValueError, AssetsEndpoint, **params)
 
     def test_param_token_ids_returns_assets_corresponding_to_single_contract(self):

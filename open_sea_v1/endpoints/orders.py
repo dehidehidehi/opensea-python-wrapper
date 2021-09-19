@@ -6,6 +6,7 @@ from ratelimit import sleep_and_retry, limits
 from open_sea_v1.endpoints.abc import BaseEndpoint
 from open_sea_v1.endpoints.client import BaseClient, ClientParams, MAX_CALLS_PER_SECOND, RATE_LIMIT
 from open_sea_v1.endpoints.urls import EndpointURLS
+from open_sea_v1.responses.collection import CollectionResponse
 from open_sea_v1.responses.order import OrderResponse
 
 
@@ -107,15 +108,13 @@ class OrdersEndpoint(BaseClient, BaseEndpoint):
 
     def __post_init__(self):
         self._validate_request_params()
-        if not self.client_params:
-            raise AttributeError('Attribute client_params is missing.')
 
     @property
     def url(self):
         return EndpointURLS.ORDERS.value
 
     @property
-    def parsed_http_response(self) -> list[CollectionResponse]:
+    def parsed_http_response(self) -> list[OrderResponse]:
         orders_jsons = self._http_response.json()['orders']
         orders = [OrderResponse(order_json) for order_json in orders_jsons]
         return orders

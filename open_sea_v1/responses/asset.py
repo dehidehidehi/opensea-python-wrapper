@@ -85,31 +85,28 @@ class AssetResponse(BaseResponse):
 
     def __post_init__(self):
         self._set_common_attrs()
-        self._set_optional_attrs()
 
     def _set_common_attrs(self):
-        self.token_id = str(self._json["token_id"])
-        self.num_sales = self._json["num_sales"]
-        self.background_color = self._json["background_color"]
-        self.image_url = self._json["image_url"]
-        self.image_preview_url = self._json["image_preview_url"]
-        self.image_thumbnail_url = self._json["image_thumbnail_url"]
-        self.image_original_url = self._json["image_original_url"]
-        self.animation_url = self._json["animation_url"]
-        self.animation_original_url = self._json["animation_original_url"]
-        self.name = self._json["name"]
-        self.description = self._json["description"]
-        self.external_link = self._json["external_link"]
-        self.permalink = self._json["permalink"]
-        self.decimals = self._json["decimals"]
-        self.token_metadata = self._json["token_metadata"]
-        self.id = str(self._json["id"])
-
-    def _set_optional_attrs(self):
         """
-        Most asset responses are alike, but some are returned with less information.
-        To avoid raising KeyErrors, we will use the .get method when setting these attributes.
+        Depending on the EventType you request, some elements of the json response will be missing.
+        For that reason we use .get() on every element.
         """
+        self.token_id = str(self._json.get("token_id") or '')
+        self.num_sales = self._json.get("num_sales")
+        self.background_color = self._json.get("background_color")
+        self.image_url = self._json.get("image_url")
+        self.image_preview_url = self._json.get("image_preview_url")
+        self.image_thumbnail_url = self._json.get("image_thumbnail_url")
+        self.image_original_url = self._json.get("image_original_url")
+        self.animation_url = self._json.get("animation_url")
+        self.animation_original_url = self._json.get("animation_original_url")
+        self.name = self._json.get("name")
+        self.description = self._json.get("description")
+        self.external_link = self._json.get("external_link")
+        self.permalink = self._json.get("permalink")
+        self.decimals = self._json.get("decimals")
+        self.token_metadata = self._json.get("token_metadata")
+        self.id = str(self._json.get("id") or '')
         self.transfer_fee = self._json.get("transfer_fee")
         self.transfer_fee_payment_token = self._json.get("transfer_fee_payment_token")
         self.is_presale = self._json.get("is_presale")

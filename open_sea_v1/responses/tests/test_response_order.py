@@ -13,7 +13,7 @@ class TestOrderObj(ResponseTestHelper):
     @classmethod
     def setUpClass(cls) -> None:
         client_params = ClientParams(page_size=1, limit=1)
-        params = cls.default_asset_params | dict(client_params=client_params)
+        params = cls.default_asset_params | dict(client_params=client_params)  # type: ignore
         orders = cls.create_and_get(OrdersEndpoint, **params)
         cls.order = orders[0]
 

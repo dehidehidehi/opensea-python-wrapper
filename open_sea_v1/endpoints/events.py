@@ -106,7 +106,7 @@ class EventsEndpoint(BaseClient, BaseEndpoint):
 
     @property
     def parsed_http_response(self) -> list[EventResponse]:
-        return self.parse_http_response(EventResponse, 'asset_events')
+        return self.parse_http_response(EventResponse, 'asset_events')  # type: ignore
 
     def _validate_request_params(self) -> None:
         self._validate_param_auction_type()

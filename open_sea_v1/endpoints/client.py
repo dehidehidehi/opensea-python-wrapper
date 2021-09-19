@@ -18,20 +18,29 @@ class ClientParams:
     """Common OpenSea Endpoint parameters to pass in."""
     offset: int = 0
     page_size: int = 50
-    limit: Optional[int] = None
+    limit: int = 50
     max_pages: Optional[int] = None
     api_key: Optional[str] = None
 
     def __post_init__(self):
+        if self.max_pages:
+            self.max_pages += 1  # prevent paginator from ending one page early
         self._validate_attrs()
-        self._decrement_max_pages_attr()
         self._set_max_rate_limit()
 
     def _validate_attrs(self) -> None:
-        if self.limit is not None and not 0 < self.limit <= 300:
+        if not 0 < self.limit <= 300:
             raise ValueError(f'{self.limit=} must be over 0 and lesser or equal to 300.')
-        if self.page_size is not None and not 0 <= self.page_size <= 50:
+
+        if self.max_pages is not None and self.max_pages <= 0:
+            raise ValueError(f'{self.max_pages=} must be greater than 0.')
+
+        if not 0 <= self.page_size <= 50:
             raise ValueError(f'{self.page_size=} must be between 0 and 50.')
+
+        if self.limit < self.page_size:
+            raise ValueError(f'{self.limit=} cannot be lesser than {self.page_size=}.')
+
         if self.max_pages is not None and self.max_pages < 0:
             raise ValueError(f'{self.max_pages=} must be greater than or equal to 0.')
 
@@ -49,6 +58,7 @@ class ClientParams:
         if self.api_key:
             raise NotImplementedError("I don't know what the rate limit is for calls with an API key is yet.")
 
+
 @dataclass
 class BaseClient(ABC):
     """
@@ -61,20 +71,11 @@ class BaseClient(ABC):
         If True, will throttle the amount of requests per second to the OpenSea API.
         If you pass an API key into the client_params instance, the rate limiting will change accordingly.
         If False, will not throttle.
-
-    retry: bool
-        OpenSea will occasionally return an empty response object, although the same query would yield
-        a full response object afterwards.
-        If True, will pause the request for one second before trying again once.
-        If it fails again, the empty response is returned.
-        If set to False, the client always returns the first response object, even if it is empty.
-
     """
 
     client_params: ClientParams
     url = None
     rate_limiting: bool = True
-    retry: bool = True
 
     def __post_init__(self):
         self.processed_pages: int = 0
@@ -115,17 +116,20 @@ class BaseClient(ABC):
             if self.parsed_http_response is not None:  # edge case
                 self.processed_pages += 1
                 self.client_params.offset += self.client_params.page_size
+                self.client_params._decrement_max_pages_attr()
+                if not self.parsed_http_response:
+                    break  # prevents returning last empty page
                 yield self.parsed_http_response
 
     def remaining_pages(self) -> bool:
         if self._http_response is None:
             return True
 
-        if (max_pages_was_set := self.client_params.max_pages is not None) and \
-            (previous_page_was_not_empty := len(self.parsed_http_response) > 0) and \
-                (remaining_pages_until_max_pages := self.processed_pages <= self.client_params.max_pages):
-            return True
+        if is_the_last_page := len(self.parsed_http_response) < self.client_params.page_size:
+            return False
 
-        if is_not_the_last_page := len(self.parsed_http_response) >= self.client_params.offset:
-            return True
-        return False
+        max_pages_reached: bool = self.client_params.max_pages is not None and self.client_params.max_pages <= 0
+        if max_pages_reached:
+            return False
+
+        return True

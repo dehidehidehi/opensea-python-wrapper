@@ -6,63 +6,6 @@ from open_sea_v1.endpoints.events import EventsEndpoint, EventType
 from open_sea_v1.responses.event import EventResponse
 
 
-
-class TestClientParams(TestCase):
-
-    def test_max_pages_attr_is_automatically_decremented_by_1(self):
-        params = ClientParams(max_pages=1)
-        self.assertEqual(params.max_pages, 0)
-
-    def test_max_pages_attr_raises_value_error_if_below_or_equal_to_zero(self):
-        self.assertRaises(ValueError, ClientParams, max_pages=-1)
-
-    def test_limit_attr_raises_value_error_if_not_between_0_and_300(self):
-        self.assertRaises(ValueError, ClientParams, limit=-1)
-        self.assertRaises(ValueError, ClientParams, limit=301)
-
-    def test_page_size_attr_raises_value_error_if_not_between_0_and_50(self):
-        self.assertRaises(ValueError, ClientParams, page_size=-1)
-        self.assertRaises(ValueError, ClientParams, page_size=51)
-
-
-class TestClientParams(TestCase):
-
-    def test_max_pages_attr_is_automatically_decremented_by_1(self):
-        params = ClientParams(max_pages=1)
-        self.assertEqual(params.max_pages, 0)
-
-    def test_max_pages_attr_raises_value_error_if_below_or_equal_to_zero(self):
-        self.assertRaises(ValueError, ClientParams, max_pages=-1)
-
-    def test_limit_attr_raises_value_error_if_not_between_0_and_300(self):
-        self.assertRaises(ValueError, ClientParams, limit=-1)
-        self.assertRaises(ValueError, ClientParams, limit=301)
-
-    def test_page_size_attr_raises_value_error_if_not_between_0_and_50(self):
-        self.assertRaises(ValueError, ClientParams, page_size=-1)
-        self.assertRaises(ValueError, ClientParams, page_size=51)
-
-
-
-
-class TestClientParams(TestCase):
-
-    def test_max_pages_attr_is_automatically_decremented_by_1(self):
-        params = ClientParams(max_pages=1)
-        self.assertEqual(params.max_pages, 0)
-
-    def test_max_pages_attr_raises_value_error_if_below_or_equal_to_zero(self):
-        self.assertRaises(ValueError, ClientParams, max_pages=-1)
-
-    def test_limit_attr_raises_value_error_if_not_between_0_and_300(self):
-        self.assertRaises(ValueError, ClientParams, limit=-1)
-        self.assertRaises(ValueError, ClientParams, limit=301)
-
-    def test_page_size_attr_raises_value_error_if_not_between_0_and_50(self):
-        self.assertRaises(ValueError, ClientParams, page_size=-1)
-        self.assertRaises(ValueError, ClientParams, page_size=51)
-
-
 class TestClientParams(TestCase):
 
     def test_max_pages_attr_is_automatically_decremented_by_1(self):
@@ -158,7 +101,7 @@ class TestBaseEndpointClient(TestCase):
         limit = 2
         max_pages = 2
         self.sample_client.client_params = ClientParams(limit=limit, page_size=limit, max_pages=max_pages)
-        events_resps: list[EventResponse] = list(chain.from_iterable(self.sample_client.get_pages()))
+        events_resps: list[EventResponse] = list(chain.from_iterable(self.sample_client.get_pages()))  # type: ignore
         unique_ids = set(e.id for e in events_resps)
         self.assertEqual(len(unique_ids), (limit+1) * max_pages)
 

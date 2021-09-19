@@ -50,7 +50,7 @@ class CollectionsEndpoint(BaseClient, BaseEndpoint):
 
     @property
     def parsed_http_response(self) -> list[CollectionResponse]:
-        return self.parse_http_response(CollectionResponse, 'collections')
+        return self.parse_http_response(CollectionResponse, 'collections')  # type: ignore
 
     def _get_request(self, **kwargs):
         params = dict(
