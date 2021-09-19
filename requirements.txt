@@ -1,2 +1,6 @@
 requests
+aiohttp
+cchardet
+aiodns
 ratelimit
+ujson

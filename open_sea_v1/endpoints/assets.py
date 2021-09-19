@@ -64,6 +64,8 @@ class AssetsEndpoint(BaseClient, BaseEndpoint):
     owner: Optional[str] = None
     order_by: Optional[AssetsOrderBy] = None
     order_direction: str = None
+    _response_type = AssetResponse
+    _json_resp_key = 'assets'
 
     def __post_init__(self):
         self._validate_request_params()
@@ -75,11 +77,8 @@ class AssetsEndpoint(BaseClient, BaseEndpoint):
         return EndpointURLS.ASSETS.value
 
     @property
-    def parsed_http_response(self) -> list[AssetResponse]:
-        return self.parse_http_response(AssetResponse, 'assets')  # type: ignore
-
-    def _get_request(self, **kwargs):
-        params = dict(
+    def get_params(self) -> dict:
+        return dict(
             owner=self.owner,
             token_ids=self.token_ids,
             asset_contract_address=self.asset_contract_address,
@@ -90,9 +89,10 @@ class AssetsEndpoint(BaseClient, BaseEndpoint):
             offset=self.client_params.offset,
             limit=self.client_params.limit,
         )
-        get_request_kwargs = dict(params=params)
-        self._http_response = super()._get_request(**get_request_kwargs)
-        return self._http_response
+
+    @property
+    def parsed_http_response(self) -> list[AssetResponse]:
+        return self._parse_json_resp()  # type: ignore
 
     def _validate_request_params(self) -> None:
         self._validate_mandatory_params()

@@ -1,6 +1,8 @@
 from unittest import TestLoader, TextTestRunner
 
 
+SKIP_SLOW_TESTS = True
+
 def discover_and_run_tests() -> None:
     loader = TestLoader()
     tests = loader.discover('..', pattern='test_*')

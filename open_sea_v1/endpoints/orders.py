@@ -1,12 +1,9 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from ratelimit import sleep_and_retry, limits
-
 from open_sea_v1.endpoints.abc import BaseEndpoint
-from open_sea_v1.endpoints.client import BaseClient, ClientParams, MAX_CALLS_PER_SECOND, RATE_LIMIT
+from open_sea_v1.endpoints.client import BaseClient, ClientParams
 from open_sea_v1.endpoints.urls import EndpointURLS
-from open_sea_v1.responses.collection import CollectionResponse
 from open_sea_v1.responses.order import OrderResponse
 
 
@@ -105,6 +102,8 @@ class OrdersEndpoint(BaseClient, BaseEndpoint):
     sale_kind: int = None
     order_by: str = None
     order_direction: str = None
+    _response_type = OrderResponse
+    _json_resp_key = 'orders'
 
     def __post_init__(self):
         self._validate_request_params()
@@ -114,16 +113,8 @@ class OrdersEndpoint(BaseClient, BaseEndpoint):
         return EndpointURLS.ORDERS.value
 
     @property
-    def parsed_http_response(self) -> list[OrderResponse]:
-        orders_jsons = self._http_response.json()['orders']
-        orders = [OrderResponse(order_json) for order_json in orders_jsons]
-        return orders
-
-    @sleep_and_retry
-    @limits(calls=.25, period=RATE_LIMIT)
-    def _get_request(self, **kwargs):
-        """Added slower rate limiing"""
-        params = dict(
+    def get_params(self) -> dict:
+        return dict(
             asset_contract_address=self.asset_contract_address,
             payment_token_address=self.payment_token_address,
             maker=self.maker,
@@ -144,9 +135,6 @@ class OrdersEndpoint(BaseClient, BaseEndpoint):
             order_by=self.order_by,
             order_direction=self.order_direction,
         )
-        get_request_kwargs = dict(params=params)
-        self._http_response = super()._get_request(**get_request_kwargs)
-        return self._http_response
 
     def _validate_request_params(self) -> None:
         self._validate_contract_address_defined_with_token_id_or_tokens_ids()

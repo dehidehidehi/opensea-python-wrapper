@@ -1,16 +1,19 @@
+from itertools import chain
+from typing import Type
 from unittest import TestCase
 
+from open_sea_v1.endpoints.abc import BaseEndpoint
 from open_sea_v1.responses.abc import BaseResponse
 
 
 class ResponseTestHelper(TestCase):
 
     @classmethod
-    def create_and_get(cls, endpoint_client,  **kwargs) -> list[BaseResponse]:
+    def create_and_get(cls, endpoint_client: Type[BaseEndpoint],  **kwargs) -> list[list[BaseResponse]]:
         """Shortcut"""
-        client = endpoint_client(**kwargs)
-        client._get_request()
-        return client.parsed_http_response
+        client = endpoint_client(**kwargs)  # type: ignore
+        flattened = client.get_parsed_pages(flat=True)
+        return flattened
 
     @staticmethod
     def assert_attributes_do_not_raise_unexpected_exceptions(target_obj):

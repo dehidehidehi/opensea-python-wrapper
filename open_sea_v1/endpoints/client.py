@@ -1,21 +1,27 @@
+import asyncio
 import logging
-from abc import ABC
+import sys
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Generator, Union, Type
+from itertools import chain
+from os import environ
+from typing import Optional, Type, Union
 
-from ratelimit import limits, sleep_and_retry
-from requests import Response, request
+import ujson
+from aiohttp import ClientSession
+from requests.models import PreparedRequest
 
+from open_sea_v1.helpers.rate_limiter import RateLimiter
 from open_sea_v1.responses.abc import BaseResponse
 
 logger = logging.getLogger(__name__)
 
-MAX_CALLS_PER_SECOND = 2  # gets overriden if API key is passed to ClientParams instance
-RATE_LIMIT = 1  # second
-
 @dataclass
 class ClientParams:
-    """Common OpenSea Endpoint parameters to pass in."""
+    """
+    Common OpenSea Endpoint parameters to pass in.
+    Will automatically use OPENSEA_API_KEY environment variable as the api_key value, if it exists on the system.
+    """
     offset: int = 0
     page_size: int = 50
     limit: int = 50
@@ -23,10 +29,10 @@ class ClientParams:
     api_key: Optional[str] = None
 
     def __post_init__(self):
-        if self.max_pages:
-            self.max_pages += 1  # prevent paginator from ending one page early
+        # if self.max_pages:
+        #     self.max_pages += 1  # prevent paginator from ending one page early
+        self._attempt_setting_the_api_key()
         self._validate_attrs()
-        self._set_max_rate_limit()
 
     def _validate_attrs(self) -> None:
         if not 0 < self.limit <= 300:
@@ -52,84 +58,128 @@ class ClientParams:
         if self.max_pages is not None:
             self.max_pages -= 1
 
-    def _set_max_rate_limit(self) -> None:
-        global MAX_CALLS_PER_SECOND
-        MAX_CALLS_PER_SECOND = 2  # per second
-        if self.api_key:
-            raise NotImplementedError("I don't know what the rate limit is for calls with an API key is yet.")
+    def _attempt_setting_the_api_key(self) -> None:
+        self.api_key = environ.get('OPENSEA_API_KEY')
 
 
 @dataclass
 class BaseClient(ABC):
     """
+    This is a partial implementation of a client class.
+    You cannot instanciate this.
+    Because of this, you can, however, access the children classes attributes and properties.
+
     Parameters
     ----------
     client_params:
         ClientParams instance.
 
-    rate_limiting: bool
-        If True, will throttle the amount of requests per second to the OpenSea API.
-        If you pass an API key into the client_params instance, the rate limiting will change accordingly.
-        If False, will not throttle.
+    _rate_limit: int = 18
+        Rate limit for the API is 20 when you have an API key.
+        However, you run the risk of losing a a few seconds if you get throttled by the server.
+        After some testing, it seems 18 is the sweet spot.
+
+    _concurrency_limit: int = 9
+        Concurrency limit: number of simultaneous connections at a time.
+        Best results obtained by using the largest multiple of _rate_limit, or second largest multiple.
+        Otherwise you risk more throttling on the serverside than necessary.
     """
 
     client_params: ClientParams
     url = None
-    rate_limiting: bool = True
+
+    _rate_limit: int = 18
+    _concurrency_limit: int = 5
 
     def __post_init__(self):
         self.processed_pages: int = 0
         self.response = None
         self.parsed_http_response = None
-        self._http_response = None
+        self._latest_json_response = None
+
+        self._rate_limit = 2 if not self.client_params.api_key else self._rate_limit
+
+    @property
+    @abstractmethod
+    def _json_resp_key(self) -> str:
+        """To access the contents of a page from the contents of an OpenSea HTTP response,
+         you need to use a dictionnary key."""
 
     @property
     def http_headers(self) -> dict:
-        params = {'headers': dict()}
+        headers = dict()
         if self.client_params.api_key:
-            params['headers'] = {'X-API-Key': self.client_params.api_key}
-        return params
+            headers['X-API-Key'] = self.client_params.api_key
+        return headers
 
-    @sleep_and_retry
-    @limits(calls=MAX_CALLS_PER_SECOND, period=RATE_LIMIT)
-    def _get_request(self, **kwargs) -> Response:
-        """Get requests with a rate limiter."""
-        updated_kwargs = kwargs | self.http_headers
-        return request('GET', self.url, **updated_kwargs)
+    def get_parsed_pages(self, flat: bool = True) -> list:
+        """Dispatches to the correct function depending on whether the user has an API key or not."""
+        if sys.platform == 'win32':
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # prevents closed loops errors on windows
+        self._latest_json_response = None  # reset: required for pagination function
+        results = asyncio.run(self._aget_parsed_pages())  # implement async generator so i can use yield from
+        if not flat:
+            return results
+        flattened = list(chain.from_iterable(results))
+        return flattened
 
-    def parse_http_response(self, response_type: Type[BaseResponse], key: str)\
-            -> list[Union[Type[BaseResponse], BaseResponse]]:
-        if self._http_response:
-            the_json = self._http_response.json()
-            the_json = the_json[key] if isinstance(the_json, dict) else the_json  # the collections endpoint needs this
-            responses = [response_type(element) for element in the_json]
-            return responses
-        return list()
+    async def _aget_parsed_pages(self) -> list[list[Type[BaseResponse]]]:  # cant be a synchronous generator
+        all_parsed_jsons = list()
 
-    def get_pages(self) -> Generator[list[list[BaseResponse]], None, None]:
-        self.processed_pages = 0
-        self.client_params.offset = 0 if self.client_params.offset is None else self.client_params.offset
-        self._http_response = None
+        async with RateLimiter(rate_limit=self._rate_limit, concurrency_limit=self._concurrency_limit) as rate_limiter:
+            async with ClientSession(headers=self.http_headers, json_serialize=ujson.dumps) as session:
+                json_batch = await self._async_get_pages_jsons(session, rate_limiter=rate_limiter)
+                parsed_json_batch = [self._parse_json(j) for j in json_batch]
+                all_parsed_jsons.extend(parsed_json_batch)
 
-        while self.remaining_pages():
-            self._http_response = self._get_request()
-            if self.parsed_http_response is not None:  # edge case
-                self.processed_pages += 1
-                self.client_params.offset += self.client_params.page_size
+        return all_parsed_jsons
+
+    async def _async_get_pages_jsons(self, session, *, rate_limiter: RateLimiter) -> Optional[list[dict]]:
+        responses = list()
+        while self._remaining_pages():
+
+            self.client_params.offset += self.client_params.page_size
+            params = {**self.get_params, **{'offset': self.client_params.offset}}  # type: ignore
+            querystring = self.mk_querystring(self.url, params=params)
+
+            async with rate_limiter.throttle():
+                resp = await session.get(querystring)
+                json_resp = await resp.json()
+                self._latest_json_response = json_resp
                 self.client_params._decrement_max_pages_attr()
-                if not self.parsed_http_response:
-                    break  # prevents returning last empty page
-                yield self.parsed_http_response
 
-    def remaining_pages(self) -> bool:
-        if self._http_response is None:
+            if potential_error_occurred := isinstance(json_resp, dict) and 'detail' in json_resp.keys():
+                raise ConnectionError(f'{(error_msg := json_resp["detail"])}')
+
+            responses.append(json_resp)
+        return responses
+
+    def _parse_json(self, the_json: Union[dict, list]) -> list[Type[BaseResponse]]:
+        if not the_json:
+            return list()
+
+        if isinstance(the_json, dict):
+            json_list = the_json[self._json_resp_key]  # type: ignore
+
+        if isinstance(the_json, list):
+            flattened = list(chain.from_iterable(the_json)) if isinstance(the_json[0], list) else the_json  # just in case multiple pages
+            json_list = list(chain.from_iterable(j.get(self._json_resp_key) or [j] for j in flattened))
+
+        responses = [self._response_type(element) for element in json_list]  # type: ignore
+        return responses
+
+    def _remaining_pages(self) -> bool:
+        if self._latest_json_response is None:
             return True
-
-        if is_the_last_page := len(self.parsed_http_response) < self.client_params.page_size:
+        if is_the_last_page := len(self._parse_json(self._latest_json_response)) < self.client_params.page_size:
             return False
-
         max_pages_reached: bool = self.client_params.max_pages is not None and self.client_params.max_pages <= 0
         if max_pages_reached:
             return False
-
         return True
+
+    @staticmethod
+    def mk_querystring(url, params) -> str:
+        url_prepper = PreparedRequest()
+        url_prepper.prepare_url(url, params)
+        return url_prepper.url

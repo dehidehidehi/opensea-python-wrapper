@@ -2,10 +2,8 @@
 Assigns attributes to dictionnary values for easier object navigation.
 """
 from dataclasses import dataclass
-from typing import Optional
 
 from open_sea_v1.responses.abc import BaseResponse
-from open_sea_v1.responses.collection import CollectionResponse
 from open_sea_v1.responses.asset import AssetResponse
 
 

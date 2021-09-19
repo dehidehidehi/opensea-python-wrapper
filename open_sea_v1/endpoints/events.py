@@ -2,8 +2,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-from requests import Response
-
 from open_sea_v1.endpoints.abc import BaseEndpoint
 from open_sea_v1.endpoints.client import BaseClient, ClientParams
 from open_sea_v1.endpoints.urls import EndpointURLS
@@ -76,6 +74,8 @@ class EventsEndpoint(BaseClient, BaseEndpoint):
     event_type: EventType = None
     auction_type: Optional[AuctionType] = None
     only_opensea: bool = False
+    _response_type = EventResponse
+    _json_resp_key = 'asset_events'
 
     def __post_init__(self):
         self._validate_request_params()
@@ -86,8 +86,9 @@ class EventsEndpoint(BaseClient, BaseEndpoint):
     def url(self) -> str:
         return EndpointURLS.EVENTS.value
 
-    def _get_request(self, **kwargs) -> Response:
-        params = dict(
+    @property
+    def get_params(self) -> dict:
+        return dict(
             offset=self.client_params.offset,
             limit=self.client_params.limit,
             asset_contract_address=self.asset_contract_address,
@@ -100,13 +101,6 @@ class EventsEndpoint(BaseClient, BaseEndpoint):
             occurred_before=self.occurred_before,
             occurred_after=self.occurred_after,
         )
-        get_request_kwargs = dict(params=params)
-        self._http_response = super()._get_request(**get_request_kwargs)
-        return self._http_response
-
-    @property
-    def parsed_http_response(self) -> list[EventResponse]:
-        return self.parse_http_response(EventResponse, 'asset_events')  # type: ignore
 
     def _validate_request_params(self) -> None:
         self._validate_param_auction_type()

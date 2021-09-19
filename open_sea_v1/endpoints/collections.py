@@ -38,6 +38,8 @@ class CollectionsEndpoint(BaseClient, BaseEndpoint):
 
     client_params: ClientParams = None
     asset_owner: Optional[str] = None
+    _response_type = CollectionResponse
+    _json_resp_key = 'collections'
 
     def __post_init__(self):
         self._validate_request_params()
@@ -49,18 +51,12 @@ class CollectionsEndpoint(BaseClient, BaseEndpoint):
         return EndpointURLS.COLLECTIONS.value
 
     @property
-    def parsed_http_response(self) -> list[CollectionResponse]:
-        return self.parse_http_response(CollectionResponse, 'collections')  # type: ignore
-
-    def _get_request(self, **kwargs):
-        params = dict(
+    def get_params(self) -> dict:
+        return dict(
             asset_owner=self.asset_owner,
             offset=self.client_params.offset,
             limit=self.client_params.limit,
         )
-        get_request_kwargs = dict(params=params)
-        self._http_response = super()._get_request(**get_request_kwargs)
-        return self._http_response
 
     def _validate_request_params(self) -> None:
         if self.asset_owner is not None and not isinstance(self.asset_owner, str):
