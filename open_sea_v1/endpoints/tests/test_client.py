@@ -1,4 +1,3 @@
-from itertools import chain
 from os import environ
 from unittest import TestCase, skipIf
 

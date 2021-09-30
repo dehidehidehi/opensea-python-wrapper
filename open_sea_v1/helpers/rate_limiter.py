@@ -3,8 +3,6 @@ import math
 import time
 from contextlib import asynccontextmanager
 
-# GLOBAL_QUEUE = None  # singleton queue
-
 
 class RateLimiter:
     """
@@ -19,10 +17,6 @@ class RateLimiter:
             raise ValueError('concurrent limit must be non zero positive number')
 
         self.rate_limit = rate_limit
-        # global GLOBAL_QUEUE
-        # if not GLOBAL_QUEUE:
-        #     GLOBAL_QUEUE = asyncio.Queue(rate_limit)
-        # self.tokens_queue = GLOBAL_QUEUE
         self.tokens_queue = asyncio.Queue(rate_limit)
         self.tokens_consumer_task = asyncio.create_task(self.consume_tokens())
         self.semaphore = asyncio.Semaphore(concurrency_limit)

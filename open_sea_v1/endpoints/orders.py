@@ -4,7 +4,7 @@ from datetime import datetime
 from open_sea_v1.endpoints.abc import BaseEndpoint
 from open_sea_v1.endpoints.client import BaseClient, ClientParams
 from open_sea_v1.endpoints.urls import EndpointURLS
-from open_sea_v1.responses.order import OrderResponse
+from open_sea_v1.responses.asset import OrderResponse
 
 
 @dataclass
