@@ -7,6 +7,7 @@ class EtherUnit(IntEnum):
     """
     Ether sub-units quantified in Wei.
     """
+
     WEI = 1
     KWEI = 1_000
     MWEI = 1_000_000
@@ -19,8 +20,9 @@ class EtherUnit(IntEnum):
 @dataclass
 class EtherConverter:
     """
-    Convenience class whic helps convert Ether and it's sub-units (gwei, twei etc.) into other sub-units.
+    Convenience class that helps convert Ether and its sub-units (gwei, twei etc.) into other sub-units.
     """
+
     quantity: Union[str, int, float]
     unit: EtherUnit
 
