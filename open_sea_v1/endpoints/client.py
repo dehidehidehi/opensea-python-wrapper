@@ -113,6 +113,19 @@ class BaseClient(ABC):
         return headers
 
     def get_parsed_pages(self, flat: bool = True) -> list:
+        """Wraps a call to _get_parsed_pages() in a try block to catch various network errors and log them."""
+        from aiohttp.client_exceptions import ContentTypeError
+        try:
+            return self._get_parsed_pages(flat)
+        except ContentTypeError as err:
+            message = f'The request likely encountered a server side error.\n'\
+                      f'So far this has happened when OpenSea requires a mandatory API key for certain endpoints.\n'\
+                      f'Check https://twitter.com/apiopensea for endpoint status updates.\n'\
+                      f'Error: {err.message}'
+            logger.exception(message, exc_info=err)
+            raise ConnectionError(message) from err
+
+    def _get_parsed_pages(self, flat: bool = True) -> list:
         """Dispatches to the correct function depending on whether the user has an API key or not."""
         if sys.platform == 'win32':
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # prevents closed loops errors on windows
