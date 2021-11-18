@@ -152,7 +152,6 @@ class BaseClient(ABC):
         processed_pages = 0
         while self._remaining_pages():
 
-            self.client_params.offset += self.client_params.page_size
             params = {**self.get_params, **{'offset': self.client_params.offset}}  # type: ignore
             querystring = self.mk_querystring(self.url, params=params)
 
@@ -162,6 +161,8 @@ class BaseClient(ABC):
                 self._latest_json_response = json_resp
                 self.client_params._decrement_max_pages_attr()
                 processed_pages += 1
+                
+            self.client_params.offset += self.client_params.page_size
 
             if potential_error_occurred := isinstance(json_resp, dict) and 'detail' in json_resp.keys():
                 raise ConnectionError(f'{(error_msg := json_resp["detail"])}')
