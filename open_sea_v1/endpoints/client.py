@@ -118,9 +118,9 @@ class BaseClient(ABC):
         try:
             return self._get_parsed_pages(flat)
         except ContentTypeError as err:
-            message = f'The request likely encountered a server side error.\n'\
-                      f'So far this has happened when OpenSea requires a mandatory API key for certain endpoints.\n'\
-                      f'Check https://twitter.com/apiopensea for endpoint status updates.\n'\
+            message = f'The request likely encountered a server side error.\n' \
+                      f'Check https://status.opensea.io/ and https://twitter.com/apiopensea for updates.\n' \
+                      f'''So far this has happened when OpenSea's API was under attack, or under maintenance.\n'''\
                       f'Error: {err.message}'
             logger.exception(message, exc_info=err)
             raise ConnectionError(message) from err
